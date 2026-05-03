@@ -124,6 +124,23 @@ function writeStorage(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function escapeAttr(value) {
+  return escapeHtml(value);
+}
+
+function jsStringArg(value) {
+  return escapeAttr(JSON.stringify(String(value ?? '')));
+}
+
 function getOrders() { return readStorage(STORAGE_KEYS.orders, []); }
 function saveOrders(v) { writeStorage(STORAGE_KEYS.orders, v); }
 function getTables() {
@@ -326,10 +343,11 @@ function createOrder({ tableNo, items, note }) {
   const orders = getOrders();
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const nowTs = Date.now();
+  const orderId = nowTs * 1000 + Math.floor(Math.random() * 1000);
   const estimatedServiceMinutes = computeOrderEstimatedServiceMinutes(items);
   const orderNo = getNextOrderNo();
   const order = {
-    id: nowTs,
+    id: orderId,
     orderNo,
     tableNo: Number(tableNo),
     items,
@@ -409,9 +427,10 @@ function markOrderPaid(orderId) {
 
 function getLatestOrderByTable(tableNo) {
   const n = Number(tableNo);
-  return getOrders()
+  const orders = getOrders()
     .filter(order => Number(order.tableNo) === n)
-    .sort((a, b) => b.id - a.id)[0];
+    .sort((a, b) => Number(b.id) - Number(a.id));
+  return orders.find(order => !(order.status === 'teslim' && order.paymentReceived)) || orders[0];
 }
 
 function formatCategoryLabel(cat) {
@@ -460,22 +479,37 @@ function tableSimpleStatusClass(status) {
 function syncTableStatusFromOrders() {
   const tables = getTables();
   const orders = getOrders();
-  const latestByTable = new Map();
-  // Her masa için en yeni siparişi seç (liste sırası her zaman garanti değil).
+  const priorityByStatus = {
+    hazir: 4,
+    hazirlaniyor: 3,
+    alindi: 2,
+    teslim: 1
+  };
+  const activeByTable = new Map();
+  // Aynı masada birden fazla açık sipariş varsa masada en acil durumu göster.
   for (const order of orders) {
+    if (order.status === 'teslim' && order.paymentReceived) continue;
     const key = order.tableNo;
-    const prev = latestByTable.get(key);
-    if (!prev || Number(order.id) > Number(prev.id)) latestByTable.set(key, order);
+    const prev = activeByTable.get(key);
+    const orderPriority = priorityByStatus[order.status] || 0;
+    const prevPriority = priorityByStatus[prev?.status] || 0;
+    if (
+      !prev ||
+      orderPriority > prevPriority ||
+      (orderPriority === prevPriority && Number(order.id) > Number(prev.id))
+    ) {
+      activeByTable.set(key, order);
+    }
   }
   const updated = tables.map(table => {
-    const order = latestByTable.get(table.number);
-    if (!order) return table;
+    const order = activeByTable.get(table.number);
+    if (!order) return { ...table, status: 'bos' };
     const mappedStatus = {
       alindi: 'bekliyor',
       hazirlaniyor: 'hazirlaniyor',
       hazir: 'hazir',
       // Teslim edildi -> masa mor; ödeme alındı işaretlenirse tekrar boş/yeşil
-      teslim: order.paymentReceived ? 'bos' : 'teslim'
+      teslim: 'teslim'
     }[order.status] || table.status;
     return { ...table, status: mappedStatus };
   });

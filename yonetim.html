@@ -229,12 +229,12 @@
 
       const ordersHtml = orders.length ? orders.map(order => `
         <tr class="border-b text-xs md:text-sm">
-          <td class="py-2 px-2 font-medium">#${getOrderDisplayNo(order)}</td>
-          <td class="py-2 px-2">${order.tableNo}</td>
-          <td class="py-2 px-2 max-w-xs truncate">${order.items.map(i => `${i.quantity}x ${i.name}`).join(', ')}</td>
-          <td class="py-2 px-2">${order.total}₺</td>
-          <td class="py-2 px-2"><span class="px-2 py-1 rounded-full text-xs ${statusBadge(order.status)}">${statusLabel(order.status)}</span></td>
-          <td class="py-2 px-2 text-xs">${order.deliveredByWaiterName ? order.deliveredByWaiterName : '—'}</td>
+          <td class="py-2 px-2 font-medium">#${escapeHtml(getOrderDisplayNo(order))}</td>
+          <td class="py-2 px-2">${escapeHtml(order.tableNo)}</td>
+          <td class="py-2 px-2 max-w-xs truncate">${order.items.map(i => `${escapeHtml(i.quantity)}x ${escapeHtml(i.name)}`).join(', ')}</td>
+          <td class="py-2 px-2">${escapeHtml(order.total)}₺</td>
+          <td class="py-2 px-2"><span class="px-2 py-1 rounded-full text-xs ${statusBadge(order.status)}">${escapeHtml(statusLabel(order.status))}</span></td>
+          <td class="py-2 px-2 text-xs">${order.deliveredByWaiterName ? escapeHtml(order.deliveredByWaiterName) : '—'}</td>
           <td class="py-2 px-2">
             ${order.status === 'teslim'
               ? (order.paymentReceived
@@ -251,15 +251,15 @@
         <div class="border rounded-xl p-3 bg-gray-50">
           <div class="flex justify-between items-start mb-2">
             <div>
-              <p class="font-bold text-sm">#${getOrderDisplayNo(order)}</p>
-              <p class="text-xs text-gray-500">Masa ${order.tableNo}</p>
+              <p class="font-bold text-sm">#${escapeHtml(getOrderDisplayNo(order))}</p>
+              <p class="text-xs text-gray-500">Masa ${escapeHtml(order.tableNo)}</p>
             </div>
-            <span class="px-2 py-1 rounded-full text-xs font-semibold ${statusBadge(order.status)}">${statusLabel(order.status)}</span>
+            <span class="px-2 py-1 rounded-full text-xs font-semibold ${statusBadge(order.status)}">${escapeHtml(statusLabel(order.status))}</span>
           </div>
           <div class="text-xs text-gray-600 mb-2 space-y-1">
-            <p><strong>Ürünler:</strong> ${order.items.map(i => `${i.quantity}x ${i.name}`).join(', ')}</p>
-            <p><strong>Tutar:</strong> ${order.total}₺</p>
-            ${order.deliveredByWaiterName ? `<p><strong>Garson:</strong> ${order.deliveredByWaiterName}</p>` : ''}
+            <p><strong>Ürünler:</strong> ${order.items.map(i => `${escapeHtml(i.quantity)}x ${escapeHtml(i.name)}`).join(', ')}</p>
+            <p><strong>Tutar:</strong> ${escapeHtml(order.total)}₺</p>
+            ${order.deliveredByWaiterName ? `<p><strong>Garson:</strong> ${escapeHtml(order.deliveredByWaiterName)}</p>` : ''}
           </div>
           ${order.status === 'teslim' ? `<div class="pt-2 border-t">
             ${order.paymentReceived
@@ -272,7 +272,7 @@
       const productMap = {};
       orders.forEach(order => order.items.forEach(item => { productMap[item.name] = (productMap[item.name] || 0) + item.quantity; }));
       const popular = Object.entries(productMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
-      document.getElementById('popularProducts').innerHTML = popular.length ? popular.map(([name,count]) => `<div class="flex justify-between border-b pb-2"><span>${name}</span><span class="font-semibold">${count} adet</span></div>`).join('') : '<p class="text-gray-500">Veri yok.</p>';
+      document.getElementById('popularProducts').innerHTML = popular.length ? popular.map(([name,count]) => `<div class="flex justify-between border-b pb-2"><span>${escapeHtml(name)}</span><span class="font-semibold">${escapeHtml(count)} adet</span></div>`).join('') : '<p class="text-gray-500">Veri yok.</p>';
 
       const summary = [
         ['Sipariş alındı', orders.filter(x => x.status === 'alindi').length],
@@ -300,7 +300,7 @@
     }
 
     function markPaidAndRefresh(orderId) {
-      if (!confirm('Ödeme alındı olarak işaretlensin mi? (Masa boş olarak işaretlenecek)')) return;
+      if (!confirm('Ödeme alındı olarak işaretlensin mi? Aynı masada başka açık sipariş yoksa masa boş görünecek.')) return;
       markOrderPaid(orderId);
       renderManagement();
     }
@@ -362,17 +362,17 @@
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             ${editingCategoryName === cat
               ? `<input id="editCategoryNameInput" type="text" value="${escapeAttr(cat)}" class="w-full sm:max-w-xs px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">`
-              : `<span class="font-medium">${formatCategoryLabel(cat)}</span>`
+              : `<span class="font-medium">${escapeHtml(formatCategoryLabel(cat))}</span>`
             }
             <div class="flex flex-wrap gap-2">
               ${editingCategoryName === cat
                 ? `
-                  <button onclick="saveCategoryEdit('${cat}')" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-xl text-sm font-semibold">Kaydet</button>
+                  <button onclick="saveCategoryEdit(${jsStringArg(cat)})" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-xl text-sm font-semibold">Kaydet</button>
                   <button onclick="cancelCategoryEdit()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-2 rounded-xl text-sm font-semibold">İptal</button>
                 `
                 : `
-                  <button onclick="startCategoryEdit('${cat}')" class="bg-gray-800 hover:bg-gray-900 text-white px-3 py-2 rounded-xl text-sm font-semibold">Düzenle</button>
-                  <button onclick="removeCategory('${cat}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-xl text-sm font-semibold">Sil</button>
+                  <button onclick="startCategoryEdit(${jsStringArg(cat)})" class="bg-gray-800 hover:bg-gray-900 text-white px-3 py-2 rounded-xl text-sm font-semibold">Düzenle</button>
+                  <button onclick="removeCategory(${jsStringArg(cat)})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-xl text-sm font-semibold">Sil</button>
                 `
               }
             </div>
@@ -439,7 +439,7 @@
     }
 
     function renderProductCategoryOptions() {
-      document.getElementById('productCategory').innerHTML = getCategories().map(cat => `<option value="${cat}">${formatCategoryLabel(cat)}</option>`).join('');
+      document.getElementById('productCategory').innerHTML = getCategories().map(cat => `<option value="${escapeAttr(cat)}">${escapeHtml(formatCategoryLabel(cat))}</option>`).join('');
     }
 
     function renderWaiters() {
@@ -462,9 +462,9 @@
             : `
               <div class="flex items-center justify-between gap-3">
                 <div>
-                  <p class="font-semibold">${waiter.name || '-'}</p>
-                  <p class="text-sm text-gray-500">Telefon: ${waiter.phone || '-'}</p>
-                  <p class="text-sm text-gray-500">PIN: ${waiter.pin || '-'}</p>
+                  <p class="font-semibold">${escapeHtml(waiter.name || '-')}</p>
+                  <p class="text-sm text-gray-500">Telefon: ${escapeHtml(waiter.phone || '-')}</p>
+                  <p class="text-sm text-gray-500">PIN: ${escapeHtml(waiter.pin || '-')}</p>
                 </div>
                 <div class="flex gap-2">
                   <button onclick="startWaiterEdit(${waiter.id})" class="bg-gray-800 hover:bg-gray-900 text-white px-3 py-2 rounded-xl text-sm font-semibold">Düzenle</button>
@@ -538,11 +538,11 @@
         <div class="border rounded-2xl p-4">
           <div class="flex items-start justify-between gap-3">
             <div>
-              <h4 class="font-bold">${item.name}</h4>
-              <p class="text-sm text-gray-500 mt-1">${item.desc || '-'}</p>
+              <h4 class="font-bold">${escapeHtml(item.name)}</h4>
+              <p class="text-sm text-gray-500 mt-1">${escapeHtml(item.desc || '-')}</p>
               <div class="mt-2 flex flex-wrap gap-2">
-                <span class="px-3 py-1 rounded-full text-xs bg-gray-100 text-gray-700">${formatCategoryLabel(item.category)}</span>
-                <span class="px-3 py-1 rounded-full text-xs bg-green-100 text-green-700">${item.price}₺</span>
+                <span class="px-3 py-1 rounded-full text-xs bg-gray-100 text-gray-700">${escapeHtml(formatCategoryLabel(item.category))}</span>
+                <span class="px-3 py-1 rounded-full text-xs bg-green-100 text-green-700">${escapeHtml(item.price)}₺</span>
                 ${(Number.isFinite(Number(item.dynamicEstimatedServiceMinutes)) && Number(item.dynamicEstimatedServiceMinutes) > 0)
                   ? `<span class="px-3 py-1 rounded-full text-xs bg-purple-100 text-purple-700">Ort: ~${Number(item.dynamicEstimatedServiceMinutes)} dk</span>`
                   : ((Number.isFinite(Number(item.estimatedServiceMinutes)) && Number(item.estimatedServiceMinutes) > 0)
@@ -561,7 +561,7 @@
               <input id="editName_${item.id}" type="text" value="${escapeAttr(item.name || '')}" placeholder="Ürün adı" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
               <input id="editPrice_${item.id}" type="number" value="${Number(item.price) || ''}" placeholder="Fiyat" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
               <select id="editCategory_${item.id}" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
-                ${getCategories().map(cat => `<option value="${cat}" ${cat === item.category ? 'selected' : ''}>${formatCategoryLabel(cat)}</option>`).join('')}
+                ${getCategories().map(cat => `<option value="${escapeAttr(cat)}" ${cat === item.category ? 'selected' : ''}>${escapeHtml(formatCategoryLabel(cat))}</option>`).join('')}
               </select>
               <input id="editEta_${item.id}" type="number" min="1" max="240" value="${(Number.isFinite(Number(item.estimatedServiceMinutes)) && Number(item.estimatedServiceMinutes) > 0) ? Number(item.estimatedServiceMinutes) : ''}" placeholder="Tahmini servis süresi (dk)" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
               <input id="editDesc_${item.id}" type="text" value="${escapeAttr(item.desc || '')}" placeholder="Açıklama" class="sm:col-span-2 w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
@@ -628,6 +628,7 @@
       return String(value)
         .replaceAll('&', '&amp;')
         .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;')
         .replaceAll('<', '&lt;')
         .replaceAll('>', '&gt;');
     }
@@ -676,7 +677,7 @@
     }
 
     function resetSystemData() {
-      if (!confirm('Tüm sipariş, masa, kategori ve ürün verileri sıfırlansın mı?')) return;
+      if (!confirm('Tüm siparişler temizlensin ve masa durumları boş olarak sıfırlansın mı? Menü, kategori ve garsonlar korunacak.')) return;
       resetAllData();
       renderManagement();
     }

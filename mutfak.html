@@ -41,17 +41,17 @@
       grid.innerHTML = orders.length ? orders.map(order => `
         <div class="bg-white rounded-2xl shadow-md p-5">
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-xl font-bold">Sipariş #${getOrderDisplayNo(order)}</h3>
-            <span class="px-3 py-1 rounded-full text-sm font-semibold ${statusBadge(order.status)}">${statusLabel(order.status)}</span>
+            <h3 class="text-xl font-bold">Sipariş #${escapeHtml(getOrderDisplayNo(order))}</h3>
+            <span class="px-3 py-1 rounded-full text-sm font-semibold ${statusBadge(order.status)}">${escapeHtml(statusLabel(order.status))}</span>
           </div>
           <div class="space-y-2 mb-4">
-            <p class="text-sm text-gray-500">Masa: ${order.tableNo}</p>
-            <p class="text-sm text-gray-500">Saat: ${order.createdAt}</p>
+            <p class="text-sm text-gray-500">Masa: ${escapeHtml(order.tableNo)}</p>
+            <p class="text-sm text-gray-500">Saat: ${escapeHtml(order.createdAt)}</p>
             ${(Number.isFinite(Number(order.estimatedServiceMinutes)) && Number(order.estimatedServiceMinutes) > 0) ? `<p class="text-sm text-gray-500">Tahmini: ~${Number(order.estimatedServiceMinutes)} dk · Kalan: <span class="font-semibold tabular-nums">${formatMsAsMinutesSeconds(getOrderRemainingMs(order) ?? 0)}</span></p>` : ''}
-            ${order.note ? `<p class="text-sm text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2"><span class="font-semibold">Not:</span> ${order.note}</p>` : ''}
+            ${order.note ? `<p class="text-sm text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2"><span class="font-semibold">Not:</span> ${escapeHtml(order.note)}</p>` : ''}
           </div>
           <div class="space-y-2 mb-5">
-            ${order.items.map(item => `<div class="bg-gray-50 rounded-xl p-3 flex justify-between"><span>${item.quantity} x ${item.name}</span><span>${item.price * item.quantity}₺</span></div>`).join('')}
+            ${order.items.map(item => `<div class="bg-gray-50 rounded-xl p-3 flex justify-between"><span>${escapeHtml(item.quantity)} x ${escapeHtml(item.name)}</span><span>${escapeHtml(item.price * item.quantity)}₺</span></div>`).join('')}
           </div>
           <div class="grid grid-cols-2 gap-3">
             <button type="button" onclick="updateOrderStatus(${order.id},'hazirlaniyor');renderKitchen();" class="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white py-3.5 min-h-[48px] rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-300 ${order.status === 'hazir' ? 'opacity-50 cursor-not-allowed' : ''}" ${order.status === 'hazir' ? 'disabled' : ''}>Hazırlanıyor</button>

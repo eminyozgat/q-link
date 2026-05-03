@@ -117,15 +117,15 @@
       grid.innerHTML = orders.length ? orders.map(order => `
         <div class="bg-white rounded-2xl shadow-md p-5">
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-xl font-bold">Sipariş #${getOrderDisplayNo(order)}</h3>
-            <span class="px-3 py-1 rounded-full text-sm font-semibold ${statusBadge(order.status)}">${statusLabel(order.status)}</span>
+            <h3 class="text-xl font-bold">Sipariş #${escapeHtml(getOrderDisplayNo(order))}</h3>
+            <span class="px-3 py-1 rounded-full text-sm font-semibold ${statusBadge(order.status)}">${escapeHtml(statusLabel(order.status))}</span>
           </div>
           <div class="space-y-2 mb-4">
-            <p class="text-sm text-gray-500">Masa: ${order.tableNo}</p>
-            <p class="text-sm text-gray-500">Saat: ${order.createdAt}</p>
+            <p class="text-sm text-gray-500">Masa: ${escapeHtml(order.tableNo)}</p>
+            <p class="text-sm text-gray-500">Saat: ${escapeHtml(order.createdAt)}</p>
           </div>
           <div class="space-y-2 mb-5">
-            ${order.items.map(item => `<div class="bg-gray-50 rounded-xl p-3 flex justify-between"><span>${item.quantity} x ${item.name}</span><span>${item.price * item.quantity}₺</span></div>`).join('')}
+            ${order.items.map(item => `<div class="bg-gray-50 rounded-xl p-3 flex justify-between"><span>${escapeHtml(item.quantity)} x ${escapeHtml(item.name)}</span><span>${escapeHtml(item.price * item.quantity)}₺</span></div>`).join('')}
           </div>
           <button type="button" onclick="deliverOrder(${order.id})" class="w-full bg-green-600 hover:bg-green-700 active:bg-green-800 text-white py-3.5 min-h-[48px] rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-green-300">Servis Edildi</button>
         </div>`).join('') : '<div class="bg-white rounded-2xl shadow-md p-6 text-gray-500">Servise hazır sipariş yok.</div>';
@@ -230,7 +230,7 @@
       if (!select) return;
       const waiters = getWaiters().filter(w => w && w.active !== false);
       select.innerHTML = waiters.length
-        ? waiters.map(w => `<option value="${Number(w.id)}">${w.name || `Garson #${w.id}`}</option>`).join('')
+        ? waiters.map(w => `<option value="${Number(w.id)}">${escapeHtml(w.name || `Garson #${w.id}`)}</option>`).join('')
         : '<option value="">Aktif garson yok</option>';
     }
 
