@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Q-Link</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 min-h-screen">
+  <div class="max-w-6xl mx-auto px-4 py-8 sm:py-10 pb-12">
+    <div class="bg-white rounded-3xl shadow-md p-6 sm:p-8 mb-8">
+      <h1 class="text-3xl sm:text-4xl font-bold text-green-700">Q-Link</h1>
+      <p class="text-gray-500 mt-3 max-w-2xl">QR ile masa başı sipariş, mutfak ve garson ekranlarıyla tek cihazda veya farklı sekmelerde çalışır. Veriler tarayıcıda saklanır.</p>
+      <p class="text-sm text-gray-600 mt-4 bg-gray-50 rounded-xl px-4 py-3 border border-gray-100"><strong class="text-gray-800">QR ipucu:</strong> Müşteri sayfasını masaya özel açmak için <code class="bg-white px-1.5 py-0.5 rounded text-green-800 text-xs">musteri.html?masa=7</code> gibi bir adres kullanın (7 = masa numarası).</p>
+    </div>
+    <div class="grid md:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
+      <a href="musteri.html" class="group bg-white rounded-3xl shadow-md p-6 min-h-[140px] flex flex-col justify-center hover:shadow-lg active:scale-[0.99] transition focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+        <h2 class="text-2xl font-bold mb-2 group-hover:text-green-700">Müşteri</h2>
+        <p class="text-gray-500 text-sm sm:text-base">Menü, sepet, sipariş ve durum takibi.</p>
+      </a>
+      <a href="mutfak.html" class="group bg-white rounded-3xl shadow-md p-6 min-h-[140px] flex flex-col justify-center hover:shadow-lg active:scale-[0.99] transition focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+        <h2 class="text-2xl font-bold mb-2 group-hover:text-green-700">Mutfak</h2>
+        <p class="text-gray-500 text-sm sm:text-base">Hazırlanıyor ve hazır güncellemeleri.</p>
+      </a>
+      <a href="garson.html" class="group bg-white rounded-3xl shadow-md p-6 min-h-[140px] flex flex-col justify-center hover:shadow-lg active:scale-[0.99] transition focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+        <h2 class="text-2xl font-bold mb-2 group-hover:text-green-700">Garson</h2>
+        <p class="text-gray-500 text-sm sm:text-base">Servise hazır siparişleri teslim.</p>
+      </a>
+      <a href="yonetim.html" class="group bg-white rounded-3xl shadow-md p-6 min-h-[140px] flex flex-col justify-center hover:shadow-lg active:scale-[0.99] transition focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+        <h2 class="text-2xl font-bold mb-2 group-hover:text-green-700">Yönetim</h2>
+        <p class="text-gray-500 text-sm sm:text-base">Masa, menü ve sipariş özeti.</p>
+      </a>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Q-Link - Yönetim</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 min-h-screen">
+  <header class="bg-green-600 text-white shadow-md sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 py-3 sm:py-4 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <div>
+          <h1 class="text-xl sm:text-2xl md:text-3xl font-bold">Yönetim</h1>
+          <p class="text-green-100 text-xs sm:text-sm">Kontrol paneli</p>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" onclick="renderManagement()" class="bg-green-500 hover:bg-green-400 px-4 py-2.5 min-h-[44px] rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-white/50">Yenile</button>
+        <button type="button" onclick="resetSystemData()" class="bg-red-500 hover:bg-red-600 px-4 py-2.5 min-h-[44px] rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-red-200">Tüm Verileri Sıfırla</button>
+      </div>
+    </div>
+  </header>
+
+  <section class="max-w-7xl mx-auto px-4 py-6">
+    <div class="bg-white rounded-2xl shadow-md p-6">
+      <h2 class="text-2xl md:text-3xl font-bold">Yönetim Ekranı</h2>
+      <p class="text-gray-500 mt-2">Genel görünüm, masa yönetimi ve menü yönetimi ayrı sekmelerde toplandı.</p>
+
+      <div class="mt-5 flex flex-wrap gap-3">
+        <button id="tab-overview-btn" onclick="switchAdminTab('overview')" class="px-4 py-2 rounded-xl font-semibold bg-green-600 text-white">Genel Bakış</button>
+        <button id="tab-tables-btn" onclick="switchAdminTab('tables')" class="px-4 py-2 rounded-xl font-semibold bg-white text-gray-700 border border-gray-200">Masa Yönetimi</button>
+        <button id="tab-menu-btn" onclick="switchAdminTab('menu')" class="px-4 py-2 rounded-xl font-semibold bg-white text-gray-700 border border-gray-200">Menü Yönetimi</button>
+        <button id="tab-waiters-btn" onclick="switchAdminTab('waiters')" class="px-4 py-2 rounded-xl font-semibold bg-white text-gray-700 border border-gray-200">Garson Yönetimi</button>
+      </div>
+    </div>
+  </section>
+
+  <main class="max-w-7xl mx-auto px-4 pb-10">
+    <section id="tab-overview" class="space-y-6">
+      <section id="statsGrid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5"></section>
+
+      <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <section class="xl:col-span-2 bg-white rounded-2xl shadow-md p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-bold">Tüm Siparişler</h3>
+            <span class="text-sm text-gray-500">Canlı görünüm</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left">
+              <thead>
+                <tr class="border-b text-gray-500 text-sm">
+                  <th class="py-3">Sipariş No</th>
+                  <th class="py-3">Masa</th>
+                  <th class="py-3">Ürünler</th>
+                  <th class="py-3">Tutar</th>
+                  <th class="py-3">Durum</th>
+                  <th class="py-3">Teslim Eden Garson</th>
+                  <th class="py-3">İşlem</th>
+                </tr>
+              </thead>
+              <tbody id="ordersTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+        <aside class="space-y-6">
+          <div class="bg-white rounded-2xl shadow-md p-5">
+            <h3 class="text-xl font-bold mb-4">Popüler Ürünler</h3>
+            <div id="popularProducts" class="space-y-3"></div>
+          </div>
+          <div class="bg-white rounded-2xl shadow-md p-5">
+            <h3 class="text-xl font-bold mb-4">Durum Özeti</h3>
+            <div id="statusSummary" class="space-y-3"></div>
+          </div>
+        </aside>
+      </div>
+
+      <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <section class="xl:col-span-2 bg-white rounded-2xl shadow-md p-5">
+          <h3 class="text-xl font-bold mb-4">Masa Durumları</h3>
+          <div id="tableGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-4"></div>
+        </section>
+        <aside class="bg-white rounded-2xl shadow-md p-5">
+          <h3 class="text-xl font-bold mb-4">Masa Renk Anlamları</h3>
+          <div class="space-y-3">
+            <div class="flex justify-between border-b pb-2"><span>Boş</span><span class="px-3 py-1 rounded-full text-sm bg-green-100 text-green-700">Yeşil</span></div>
+            <div class="flex justify-between border-b pb-2"><span>Sipariş Bekliyor</span><span class="px-3 py-1 rounded-full text-sm bg-yellow-100 text-yellow-700">Sarı</span></div>
+            <div class="flex justify-between border-b pb-2"><span>Hazırlanıyor</span><span class="px-3 py-1 rounded-full text-sm bg-yellow-100 text-yellow-700">Sarı</span></div>
+            <div class="flex justify-between border-b pb-2"><span>Servise Hazır</span><span class="px-3 py-1 rounded-full text-sm bg-orange-100 text-orange-700">Turuncu</span></div>
+            <div class="flex justify-between"><span>Servis Edildi</span><span class="px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-700">Mor</span></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="tab-tables" class="hidden space-y-6">
+      <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <section class="xl:col-span-2 bg-white rounded-2xl shadow-md p-5">
+          <h3 class="text-xl font-bold mb-4">Masa Yönetimi</h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+            <input id="newTableNumber" type="number" placeholder="Örn: 15" class="md:col-span-2 px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
+            <select id="newTableStatus" class="px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
+              <option value="bos">Boş</option>
+              <option value="bekliyor">Sipariş Bekliyor</option>
+              <option value="hazirlaniyor">Hazırlanıyor</option>
+              <option value="hazir">Servise Hazır</option>
+              <option value="teslim">Servis Edildi</option>
+            </select>
+          </div>
+          <button onclick="addTable()" class="bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-xl font-semibold">Masa Ekle</button>
+          <div class="mt-6">
+            <h4 class="font-bold text-lg mb-3">Mevcut Masaları Düzenle</h4>
+            <div id="tableManagementList" class="space-y-3"></div>
+          </div>
+        </section>
+        <aside class="bg-white rounded-2xl shadow-md p-5">
+          <h3 class="text-xl font-bold mb-4">Açıklama</h3>
+          <p class="text-sm text-gray-500 leading-6">Bu sekmede masa ekleme, silme ve durum değiştirme işlemleri yapılır. Üstteki genel bakış bölümü sadece izleme amaçlı kalır.</p>
+        </aside>
+      </div>
+    </section>
+
+    <section id="tab-menu" class="hidden space-y-6">
+      <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <section class="bg-white rounded-2xl shadow-md p-5">
+          <h3 class="text-xl font-bold mb-4">Kategori Yönetimi</h3>
+          <div class="flex gap-3 mb-4">
+            <input id="newCategoryName" type="text" placeholder="Yeni kategori adı" class="flex-1 px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
+            <button onclick="addCategory()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-xl font-semibold">Ekle</button>
+          </div>
+          <div id="categoryList" class="space-y-3"></div>
+        </section>
+
+        <section class="bg-white rounded-2xl shadow-md p-5">
+          <h3 class="text-xl font-bold mb-4">Menüye Ürün Ekle</h3>
+          <div class="space-y-3">
+            <input id="productName" type="text" placeholder="Ürün adı" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
+            <input id="productPrice" type="number" placeholder="Fiyat" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
+            <select id="productCategory" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"></select>
+            <input id="productEtaMinutes" type="number" min="1" max="240" placeholder="Tahmini servis süresi (dk) (örn: 15)" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
+            <input id="productDesc" type="text" placeholder="Açıklama" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
+            <input id="productImage" type="text" placeholder="Görsel URL" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
+            <button onclick="addProduct()" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-semibold">Ürün Ekle</button>
+          </div>
+        </section>
+
+        <section class="bg-white rounded-2xl shadow-md p-5">
+          <div class="flex items-center justify-between gap-3 mb-4">
+            <h3 class="text-xl font-bold">Menü Ürünleri</h3>
+            <input id="menuSearch" type="text" oninput="renderMenuList()" placeholder="Ürün ara" class="w-36 px-3 py-2 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+          </div>
+          <div id="menuList" class="space-y-3 max-h-[540px] overflow-auto pr-1"></div>
+        </section>
+      </div>
+    </section>
+
+    <section id="tab-waiters" class="hidden space-y-6">
+      <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <section class="bg-white rounded-2xl shadow-md p-5">
+          <h3 class="text-xl font-bold mb-4">Garson Ekle</h3>
+          <div class="space-y-3">
+            <input id="waiterName" type="text" placeholder="Ad Soyad" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
+            <input id="waiterPhone" type="text" placeholder="Telefon (opsiyonel)" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
+            <input id="waiterPin" type="text" placeholder="Garson PIN (örn: 1003)" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
+            <button onclick="addWaiter()" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-semibold">Garson Ekle</button>
+          </div>
+        </section>
+
+        <section class="xl:col-span-2 bg-white rounded-2xl shadow-md p-5">
+          <h3 class="text-xl font-bold mb-4">Garson Listesi</h3>
+          <div id="waiterList" class="space-y-3"></div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <div id="adminAuthOverlay" class="fixed inset-0 z-[70] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-gray-100 p-6">
+      <p class="text-xs uppercase tracking-wide text-green-700 font-semibold">Güvenli Giriş</p>
+      <h3 class="text-2xl font-bold mt-1">Yönetim Paneli</h3>
+      <p class="text-sm text-gray-500 mt-2">Devam etmek için yönetim şifresini girin.</p>
+      <div class="mt-4 space-y-3">
+        <input id="adminPasswordInput" type="password" placeholder="Şifre" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
+        <p id="adminAuthError" class="text-sm text-red-600 min-h-[1.25rem]"></p>
+      </div>
+      <div class="mt-3 grid grid-cols-2 gap-2">
+        <button type="button" onclick="window.location.href='index.html'" class="w-full bg-white hover:bg-gray-100 text-gray-800 border border-gray-200 py-3 rounded-xl font-semibold">Vazgeç</button>
+        <button type="button" onclick="submitAdminPassword()" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-semibold">Giriş Yap</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    let currentAdminTab = 'overview';
+    let editingProductId = null;
+    let editingCategoryName = null;
+    let editingWaiterId = null;
+    let managementStarted = false;
+
+    function switchAdminTab(tabName) {
+      currentAdminTab = tabName;
+      ['overview', 'tables', 'menu', 'waiters'].forEach(name => {
+        document.getElementById(`tab-${name}`).classList.toggle('hidden', name !== tabName);
+        const btn = document.getElementById(`tab-${name}-btn`);
+        if (name === tabName) {
+          btn.className = 'px-4 py-2 rounded-xl font-semibold bg-green-600 text-white';
+        } else {
+          btn.className = 'px-4 py-2 rounded-xl font-semibold bg-white text-gray-700 border border-gray-200';
+        }
+      });
+    }
+
+    function renderManagement() {
+      const orders = getOrders();
+      const stats = {
+        totalOrders: orders.length,
+        waiting: orders.filter(x => x.status === 'alindi').length,
+        preparing: orders.filter(x => x.status === 'hazirlaniyor').length,
+        revenue: orders.reduce((sum, x) => sum + x.total, 0)
+      };
+
+      document.getElementById('statsGrid').innerHTML = `
+        <div class="bg-white rounded-2xl shadow-md p-5"><p class="text-sm text-gray-500">Toplam Sipariş</p><p class="text-3xl font-bold mt-2">${stats.totalOrders}</p></div>
+        <div class="bg-white rounded-2xl shadow-md p-5"><p class="text-sm text-gray-500">Bekleyen</p><p class="text-3xl font-bold mt-2">${stats.waiting}</p></div>
+        <div class="bg-white rounded-2xl shadow-md p-5"><p class="text-sm text-gray-500">Hazırlanıyor</p><p class="text-3xl font-bold mt-2">${stats.preparing}</p></div>
+        <div class="bg-white rounded-2xl shadow-md p-5"><p class="text-sm text-gray-500">Toplam Ciro</p><p class="text-3xl font-bold mt-2">${stats.revenue}₺</p></div>`;
+
+      document.getElementById('ordersTableBody').innerHTML = orders.length ? orders.map(order => `
+        <tr class="border-b">
+          <td class="py-3 font-medium">#${getOrderDisplayNo(order)}</td>
+          <td class="py-3">${order.tableNo}</td>
+          <td class="py-3">${order.items.map(i => `${i.quantity}x ${i.name}`).join(', ')}</td>
+          <td class="py-3">${order.total}₺</td>
+          <td class="py-3"><span class="px-3 py-1 rounded-full text-sm ${statusBadge(order.status)}">${statusLabel(order.status)}</span></td>
+          <td class="py-3">${order.deliveredByWaiterName ? order.deliveredByWaiterName : '<span class="text-sm text-gray-400">—</span>'}</td>
+          <td class="py-3">
+            ${order.status === 'teslim'
+              ? (order.paymentReceived
+                ? '<span class="text-sm font-semibold text-green-700">Ödeme alındı</span>'
+                : `<button type="button" onclick="markPaidAndRefresh(${order.id})" class="bg-green-600 hover:bg-green-700 active:bg-green-800 text-white px-3 py-2 rounded-xl text-sm font-semibold">Ödeme alındı</button>`)
+              : '<span class="text-sm text-gray-400">—</span>'
+            }
+          </td>
+        </tr>`).join('') : '<tr><td colspan="7" class="py-4 text-gray-500">Henüz sipariş yok.</td></tr>';
+
+      const productMap = {};
+      orders.forEach(order => order.items.forEach(item => { productMap[item.name] = (productMap[item.name] || 0) + item.quantity; }));
+      const popular = Object.entries(productMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
+      document.getElementById('popularProducts').innerHTML = popular.length ? popular.map(([name,count]) => `<div class="flex justify-between border-b pb-2"><span>${name}</span><span class="font-semibold">${count} adet</span></div>`).join('') : '<p class="text-gray-500">Veri yok.</p>';
+
+      const summary = [
+        ['Sipariş alındı', orders.filter(x => x.status === 'alindi').length],
+        ['Hazırlanıyor', orders.filter(x => x.status === 'hazirlaniyor').length],
+        ['Servise hazır', orders.filter(x => x.status === 'hazir').length],
+        ['Teslim edildi', orders.filter(x => x.status === 'teslim').length]
+      ];
+      document.getElementById('statusSummary').innerHTML = summary.map(([label,count]) => `<div class="flex justify-between border-b pb-2"><span>${label}</span><span class="font-semibold">${count}</span></div>`).join('');
+
+      renderTables();
+      renderTableManagementList();
+      if (!(currentAdminTab === 'menu' && editingCategoryName != null)) {
+        renderCategories();
+      }
+      renderProductCategoryOptions();
+      // Düzenleme sırasında otomatik yenileme input değerlerini geri alabiliyor.
+      // Bu yüzden aktif ürün düzenleme varken menü listesini yeniden çizme.
+      if (!(currentAdminTab === 'menu' && editingProductId != null)) {
+        renderMenuList();
+      }
+      if (!(currentAdminTab === 'waiters' && editingWaiterId != null)) {
+        renderWaiters();
+      }
+      switchAdminTab(currentAdminTab);
+    }
+
+    function markPaidAndRefresh(orderId) {
+      if (!confirm('Ödeme alındı olarak işaretlensin mi? (Masa boş olarak işaretlenecek)')) return;
+      markOrderPaid(orderId);
+      renderManagement();
+    }
+
+    function renderTables() {
+      const tables = getTables().sort((a,b)=>a.number-b.number);
+      document.getElementById('tableGrid').innerHTML = tables.map(table => `<div class="rounded-2xl py-8 flex items-center justify-center font-bold text-4xl ${tableSimpleStatusClass(table.status)}">${table.number}</div>`).join('');
+    }
+
+    function renderTableManagementList() {
+      const tables = getTables().sort((a,b)=>a.number-b.number);
+      document.getElementById('tableManagementList').innerHTML = tables.length ? tables.map(table => `
+        <div class="border rounded-2xl p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div><p class="font-bold">Masa ${table.number}</p><p class="text-sm text-gray-500">${tableStatusText(table.status)}</p></div>
+          <div class="flex flex-col sm:flex-row gap-2">
+            <select onchange="changeTableStatus(${table.number}, this.value)" class="px-4 py-2 rounded-xl border border-gray-300">
+              <option value="bos" ${table.status === 'bos' ? 'selected' : ''}>Boş</option>
+              <option value="bekliyor" ${table.status === 'bekliyor' ? 'selected' : ''}>Sipariş Bekliyor</option>
+              <option value="hazirlaniyor" ${table.status === 'hazirlaniyor' ? 'selected' : ''}>Hazırlanıyor</option>
+              <option value="hazir" ${table.status === 'hazir' ? 'selected' : ''}>Servise Hazır</option>
+              <option value="teslim" ${table.status === 'teslim' ? 'selected' : ''}>Servis Edildi</option>
+            </select>
+            <button onclick="removeTable(${table.number})" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl font-semibold">Sil</button>
+          </div>
+        </div>`).join('') : '<p class="text-gray-500">Masa yok.</p>';
+    }
+
+    function addTable() {
+      const numberInput = document.getElementById('newTableNumber');
+      const statusInput = document.getElementById('newTableStatus');
+      const tableNo = Number(numberInput.value);
+      if (!tableNo) return alert('Lütfen geçerli bir masa numarası gir.');
+      const tables = getTables();
+      if (tables.some(t => t.number === tableNo)) return alert('Bu masa numarası zaten var.');
+      tables.push({ number: tableNo, status: statusInput.value });
+      saveTables(tables);
+      numberInput.value = '';
+      statusInput.value = 'bos';
+      renderTables();
+      renderTableManagementList();
+    }
+
+    function removeTable(tableNo) {
+      saveTables(getTables().filter(t => t.number !== tableNo));
+      renderTables();
+      renderTableManagementList();
+    }
+
+    function changeTableStatus(tableNo, newStatus) {
+      saveTables(getTables().map(t => t.number === tableNo ? { ...t, status: newStatus } : t));
+      renderTables();
+      renderTableManagementList();
+    }
+
+    function renderCategories() {
+      const categories = getCategories();
+      document.getElementById('categoryList').innerHTML = categories.length ? categories.map(cat => `
+        <div class="border rounded-xl px-4 py-3">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            ${editingCategoryName === cat
+              ? `<input id="editCategoryNameInput" type="text" value="${escapeAttr(cat)}" class="w-full sm:max-w-xs px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">`
+              : `<span class="font-medium">${formatCategoryLabel(cat)}</span>`
+            }
+            <div class="flex flex-wrap gap-2">
+              ${editingCategoryName === cat
+                ? `
+                  <button onclick="saveCategoryEdit('${cat}')" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-xl text-sm font-semibold">Kaydet</button>
+                  <button onclick="cancelCategoryEdit()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-2 rounded-xl text-sm font-semibold">İptal</button>
+                `
+                : `
+                  <button onclick="startCategoryEdit('${cat}')" class="bg-gray-800 hover:bg-gray-900 text-white px-3 py-2 rounded-xl text-sm font-semibold">Düzenle</button>
+                  <button onclick="removeCategory('${cat}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-xl text-sm font-semibold">Sil</button>
+                `
+              }
+            </div>
+          </div>
+        </div>`).join('') : '<p class="text-gray-500">Kategori yok.</p>';
+    }
+
+    function startCategoryEdit(category) {
+      editingCategoryName = category;
+      renderCategories();
+      const input = document.getElementById('editCategoryNameInput');
+      if (input) input.focus();
+    }
+
+    function cancelCategoryEdit() {
+      editingCategoryName = null;
+      renderCategories();
+    }
+
+    function saveCategoryEdit(oldCategory) {
+      const input = document.getElementById('editCategoryNameInput');
+      const newCategory = normalizeCategoryName(input?.value || '');
+      if (!newCategory) return alert('Kategori adı boş olamaz.');
+
+      const categories = getCategories();
+      if (!categories.includes(oldCategory)) return alert('Kategori bulunamadı.');
+      const hasDuplicate = categories.some(cat =>
+        !isSameCategory(cat, oldCategory) && isSameCategory(cat, newCategory)
+      );
+      if (hasDuplicate) return alert('Bu kategori adı zaten var.');
+
+      const updatedCategories = categories.map(cat => cat === oldCategory ? newCategory : cat);
+      saveCategories(updatedCategories);
+
+      // Kategori adı değiştiğinde bu kategoriye bağlı ürünleri de güncelle.
+      const products = getProducts().map(product =>
+        product.category === oldCategory ? { ...product, category: newCategory } : product
+      );
+      saveProducts(products);
+
+      editingCategoryName = null;
+      renderCategories();
+      renderProductCategoryOptions();
+      renderMenuList();
+    }
+
+    function addCategory() {
+      const input = document.getElementById('newCategoryName');
+      const value = normalizeCategoryName(input.value);
+      if (!value) return alert('Kategori adı gir.');
+      const categories = getCategories();
+      if (categories.some(cat => isSameCategory(cat, value))) return alert('Bu kategori zaten var.');
+      categories.push(value);
+      saveCategories(categories);
+      input.value = '';
+      renderCategories();
+      renderProductCategoryOptions();
+    }
+
+    function removeCategory(category) {
+      saveCategories(getCategories().filter(cat => cat !== category));
+      renderCategories();
+      renderProductCategoryOptions();
+    }
+
+    function renderProductCategoryOptions() {
+      document.getElementById('productCategory').innerHTML = getCategories().map(cat => `<option value="${cat}">${formatCategoryLabel(cat)}</option>`).join('');
+    }
+
+    function renderWaiters() {
+      const waiters = getWaiters().slice().sort((a, b) => Number(a.id) - Number(b.id));
+      const list = document.getElementById('waiterList');
+      list.innerHTML = waiters.length ? waiters.map(waiter => `
+        <div class="border rounded-2xl p-4">
+          ${editingWaiterId === waiter.id
+            ? `
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
+                <input id="editWaiterName_${waiter.id}" type="text" value="${escapeAttr(waiter.name || '')}" class="px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
+                <input id="editWaiterPhone_${waiter.id}" type="text" value="${escapeAttr(waiter.phone || '')}" class="px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
+                <input id="editWaiterPin_${waiter.id}" type="text" value="${escapeAttr(waiter.pin || '')}" class="px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <button onclick="saveWaiterEdits(${waiter.id})" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-xl text-sm font-semibold">Kaydet</button>
+                <button onclick="cancelWaiterEdit()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-2 rounded-xl text-sm font-semibold">İptal</button>
+              </div>
+            `
+            : `
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <p class="font-semibold">${waiter.name || '-'}</p>
+                  <p class="text-sm text-gray-500">Telefon: ${waiter.phone || '-'}</p>
+                  <p class="text-sm text-gray-500">PIN: ${waiter.pin || '-'}</p>
+                </div>
+                <div class="flex gap-2">
+                  <button onclick="startWaiterEdit(${waiter.id})" class="bg-gray-800 hover:bg-gray-900 text-white px-3 py-2 rounded-xl text-sm font-semibold">Düzenle</button>
+                  <button onclick="removeWaiter(${waiter.id})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-xl text-sm font-semibold">Sil</button>
+                </div>
+              </div>
+            `
+          }
+        </div>
+      `).join('') : '<p class="text-gray-500">Henüz garson yok.</p>';
+    }
+
+    function addWaiter() {
+      const name = String(document.getElementById('waiterName')?.value || '').trim();
+      const phone = String(document.getElementById('waiterPhone')?.value || '').trim();
+      const pin = String(document.getElementById('waiterPin')?.value || '').trim();
+      if (!name || !pin) return alert('Garson adı ve PIN zorunlu.');
+
+      const waiters = getWaiters();
+      if (waiters.some(w => String(w.pin || '') === pin)) return alert('Bu PIN zaten kullanılıyor.');
+      waiters.push({ id: Date.now(), name, phone, pin, active: true });
+      saveWaiters(waiters);
+
+      ['waiterName', 'waiterPhone', 'waiterPin'].forEach(id => {
+        const input = document.getElementById(id);
+        if (input) input.value = '';
+      });
+      renderWaiters();
+    }
+
+    function startWaiterEdit(id) {
+      editingWaiterId = Number(id);
+      renderWaiters();
+    }
+
+    function cancelWaiterEdit() {
+      editingWaiterId = null;
+      renderWaiters();
+    }
+
+    function saveWaiterEdits(id) {
+      const waiterId = Number(id);
+      const name = String(document.getElementById(`editWaiterName_${waiterId}`)?.value || '').trim();
+      const phone = String(document.getElementById(`editWaiterPhone_${waiterId}`)?.value || '').trim();
+      const pin = String(document.getElementById(`editWaiterPin_${waiterId}`)?.value || '').trim();
+      if (!name || !pin) return alert('Garson adı ve PIN zorunlu.');
+
+      const waiters = getWaiters();
+      if (waiters.some(w => Number(w.id) !== waiterId && String(w.pin || '') === pin)) {
+        return alert('Bu PIN zaten kullanılıyor.');
+      }
+
+      const updated = waiters.map(w => Number(w.id) === waiterId ? { ...w, name, phone, pin } : w);
+      saveWaiters(updated);
+      editingWaiterId = null;
+      renderWaiters();
+    }
+
+    function removeWaiter(id) {
+      const waiterId = Number(id);
+      if (!confirm('Bu garson silinsin mi?')) return;
+      saveWaiters(getWaiters().filter(w => Number(w.id) !== waiterId));
+      if (editingWaiterId === waiterId) editingWaiterId = null;
+      renderWaiters();
+    }
+
+    function renderMenuList() {
+      const search = (document.getElementById('menuSearch')?.value || '').trim().toLowerCase();
+      const menu = getProducts().filter(item => !search || item.name.toLowerCase().includes(search) || item.category.toLowerCase().includes(search));
+      document.getElementById('menuList').innerHTML = menu.length ? menu.map(item => `
+        <div class="border rounded-2xl p-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h4 class="font-bold">${item.name}</h4>
+              <p class="text-sm text-gray-500 mt-1">${item.desc || '-'}</p>
+              <div class="mt-2 flex flex-wrap gap-2">
+                <span class="px-3 py-1 rounded-full text-xs bg-gray-100 text-gray-700">${formatCategoryLabel(item.category)}</span>
+                <span class="px-3 py-1 rounded-full text-xs bg-green-100 text-green-700">${item.price}₺</span>
+                ${(Number.isFinite(Number(item.dynamicEstimatedServiceMinutes)) && Number(item.dynamicEstimatedServiceMinutes) > 0)
+                  ? `<span class="px-3 py-1 rounded-full text-xs bg-purple-100 text-purple-700">Ort: ~${Number(item.dynamicEstimatedServiceMinutes)} dk</span>`
+                  : ((Number.isFinite(Number(item.estimatedServiceMinutes)) && Number(item.estimatedServiceMinutes) > 0)
+                    ? `<span class="px-3 py-1 rounded-full text-xs bg-blue-100 text-blue-700">~${Number(item.estimatedServiceMinutes)} dk</span>`
+                    : '')
+                }
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="startEditProduct(${item.id})" class="bg-gray-800 hover:bg-gray-900 text-white px-3 py-2 rounded-xl text-sm font-semibold">Düzenle</button>
+              <button onclick="removeProduct(${item.id})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-xl text-sm font-semibold">Sil</button>
+            </div>
+          </div>
+          <div class="mt-4 ${editingProductId === item.id ? '' : 'hidden'}" id="editProduct_${item.id}">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <input id="editName_${item.id}" type="text" value="${escapeAttr(item.name || '')}" placeholder="Ürün adı" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
+              <input id="editPrice_${item.id}" type="number" value="${Number(item.price) || ''}" placeholder="Fiyat" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
+              <select id="editCategory_${item.id}" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
+                ${getCategories().map(cat => `<option value="${cat}" ${cat === item.category ? 'selected' : ''}>${formatCategoryLabel(cat)}</option>`).join('')}
+              </select>
+              <input id="editEta_${item.id}" type="number" min="1" max="240" value="${(Number.isFinite(Number(item.estimatedServiceMinutes)) && Number(item.estimatedServiceMinutes) > 0) ? Number(item.estimatedServiceMinutes) : ''}" placeholder="Tahmini servis süresi (dk)" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
+              <input id="editDesc_${item.id}" type="text" value="${escapeAttr(item.desc || '')}" placeholder="Açıklama" class="sm:col-span-2 w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
+              <input id="editImage_${item.id}" type="text" value="${escapeAttr(item.image || '')}" placeholder="Görsel URL" class="sm:col-span-2 w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
+            </div>
+            <div class="mt-3 flex flex-wrap gap-2">
+              <button onclick="saveProductEdits(${item.id})" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold">Kaydet</button>
+              <button onclick="cancelEditProduct(${item.id})" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2.5 rounded-xl text-sm font-semibold">İptal</button>
+            </div>
+          </div>
+        </div>`).join('') : '<p class="text-gray-500">Eşleşen ürün yok.</p>';
+    }
+
+    function startEditProduct(id) {
+      editingProductId = id;
+      renderMenuList();
+      const el = document.getElementById(`editName_${id}`);
+      if (el) el.focus();
+    }
+
+    function cancelEditProduct(id) {
+      if (editingProductId === id) editingProductId = null;
+      renderMenuList();
+    }
+
+    function saveProductEdits(id) {
+      const name = document.getElementById(`editName_${id}`)?.value?.trim() || '';
+      const price = Number(document.getElementById(`editPrice_${id}`)?.value);
+      const category = document.getElementById(`editCategory_${id}`)?.value || '';
+      const etaMinutesRaw = document.getElementById(`editEta_${id}`)?.value;
+      const etaMinutes = etaMinutesRaw == null || etaMinutesRaw === '' ? null : Number(etaMinutesRaw);
+      const desc = document.getElementById(`editDesc_${id}`)?.value?.trim() || '';
+      const image = document.getElementById(`editImage_${id}`)?.value?.trim() || '';
+
+      if (!name || !Number.isFinite(price) || price <= 0 || !category) {
+        return alert('Ürün adı, fiyat (0+), kategori zorunlu.');
+      }
+      if (etaMinutes != null && (!Number.isFinite(etaMinutes) || etaMinutes <= 0)) {
+        return alert('Tahmini servis süresi boş bırakılabilir veya 1+ olmalı.');
+      }
+
+      const products = getProducts();
+      const idx = products.findIndex(p => Number(p.id) === Number(id));
+      if (idx < 0) return alert('Ürün bulunamadı.');
+
+      products[idx] = {
+        ...products[idx],
+        name,
+        price: Math.round(price * 100) / 100,
+        category,
+        estimatedServiceMinutes: etaMinutes == null ? null : Math.round(etaMinutes),
+        // Manuel süre güncellendiğinde eski dinamik değeri temizle.
+        // Ürün tekrar 100+ örnekle hesaplandığında otomatik değer yeniden üretilecektir.
+        dynamicEstimatedServiceMinutes: null,
+        desc,
+        image
+      };
+      saveProducts(products);
+      editingProductId = null;
+      renderMenuList();
+    }
+
+    function escapeAttr(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('"', '&quot;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;');
+    }
+
+    function normalizeCategoryName(value) {
+      return String(value || '')
+        .trim()
+        .replace(/\s+/g, ' ');
+    }
+
+    function isSameCategory(a, b) {
+      return normalizeCategoryName(a).localeCompare(
+        normalizeCategoryName(b),
+        'tr',
+        { sensitivity: 'base' }
+      ) === 0;
+    }
+
+    function addProduct() {
+      const name = document.getElementById('productName').value.trim();
+      const price = Number(document.getElementById('productPrice').value);
+      const category = document.getElementById('productCategory').value;
+      const etaMinutes = Number(document.getElementById('productEtaMinutes').value);
+      const desc = document.getElementById('productDesc').value.trim();
+      const image = document.getElementById('productImage').value.trim();
+      if (!name || !price || !category) return alert('Ürün adı, fiyat ve kategori zorunlu.');
+      if (!Number.isFinite(etaMinutes) || etaMinutes <= 0) return alert('Tahmini servis süresi (dk) zorunlu ve 1+ olmalı.');
+      const menu = getProducts();
+      menu.push({
+        id: Date.now(),
+        name,
+        price,
+        category,
+        estimatedServiceMinutes: Math.round(etaMinutes),
+        desc: desc || 'Açıklama yok.',
+        image: image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=900&q=80'
+      });
+      saveProducts(menu);
+      ['productName','productPrice','productEtaMinutes','productDesc','productImage'].forEach(id => document.getElementById(id).value = '');
+      renderMenuList();
+    }
+
+    function removeProduct(id) {
+      saveProducts(getProducts().filter(item => item.id !== id));
+      renderMenuList();
+    }
+
+    function resetSystemData() {
+      if (!confirm('Tüm sipariş, masa, kategori ve ürün verileri sıfırlansın mı?')) return;
+      resetAllData();
+      renderManagement();
+    }
+
+    function startManagementPage() {
+      if (managementStarted) return;
+      managementStarted = true;
+      window.addEventListener('storage', renderManagement);
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) renderManagement(); });
+      setInterval(renderManagement, 4000);
+      renderManagement();
+    }
+
+    function submitAdminPassword() {
+      const input = document.getElementById('adminPasswordInput');
+      const error = document.getElementById('adminAuthError');
+      const value = String(input?.value || '');
+      if (!checkPanelPassword('admin', value)) {
+        if (error) error.textContent = 'Şifre hatalı, tekrar deneyin.';
+        if (input) input.focus();
+        return;
+      }
+      sessionStorage.setItem('qlink_auth_admin', 'ok');
+      const overlay = document.getElementById('adminAuthOverlay');
+      if (overlay) overlay.classList.add('hidden');
+      startManagementPage();
+    }
+
+    const hasAdminSession = sessionStorage.getItem('qlink_auth_admin') === 'ok';
+    if (hasAdminSession) {
+      const overlay = document.getElementById('adminAuthOverlay');
+      if (overlay) overlay.classList.add('hidden');
+      startManagementPage();
+    } else {
+      const input = document.getElementById('adminPasswordInput');
+      if (input) {
+        input.focus();
+        input.addEventListener('keydown', event => {
+          if (event.key === 'Enter') submitAdminPassword();
+        });
+      }
+    }
+  </script>
+</body>
+</html>
