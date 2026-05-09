@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Q-Link - Mutfak</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 min-h-screen">
+  <header class="bg-green-600 text-white shadow-md sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 py-3 sm:py-4 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <div>
+          <h1 class="text-xl sm:text-2xl md:text-3xl font-bold">Mutfak</h1>
+          <p class="text-green-100 text-xs sm:text-sm">Sipariş hazırlama</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button type="button" onclick="renderKitchen()" class="bg-green-500 hover:bg-green-400 px-4 py-2.5 min-h-[44px] rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-white/50">Yenile</button>
+        <span class="hidden sm:inline bg-green-500/80 px-3 py-2 rounded-xl text-xs font-semibold">Canlı</span>
+      </div>
+    </div>
+  </header>
+
+  <section class="max-w-7xl mx-auto px-4 py-6">
+    <div class="bg-white rounded-2xl shadow-md p-6">
+      <h2 class="text-2xl md:text-3xl font-bold">Mutfak Paneli</h2>
+      <p class="text-gray-500 mt-2">Siparişler burada hazırlanıyor ve hazır durumuna alınır.</p>
+    </div>
+  </section>
+
+  <section class="max-w-7xl mx-auto px-4 pb-6">
+    <div class="bg-white rounded-2xl shadow-md p-5">
+      <h3 class="text-xl font-bold mb-4">Performans</h3>
+      <div class="grid grid-cols-3 gap-4 text-center">
+        <div><p class="text-sm text-gray-500">Bugünkü Sipariş</p><p id="statTodayCount" class="text-3xl font-bold mt-1 text-green-600">—</p></div>
+        <div><p class="text-sm text-gray-500">Tamamlanan</p><p id="statCompletedCount" class="text-3xl font-bold mt-1 text-blue-600">—</p></div>
+        <div><p class="text-sm text-gray-500">Ort. Hazırlanma</p><p id="statAvgPrep" class="text-3xl font-bold mt-1 text-orange-500">—</p></div>
+      </div>
+    </div>
+  </section>
+
+  <main class="max-w-7xl mx-auto px-4 pb-10">
+    <div id="kitchenGrid" class="grid md:grid-cols-2 xl:grid-cols-3 gap-6"></div>
+  </main>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/app.js"></script>
+  <script>
+    async function loadKitchenStats() {
+      try {
+        const stats = await api.get('/api/orders/stats');
+        const el = (id) => document.getElementById(id);
+        if (el('statTodayCount'))    el('statTodayCount').textContent    = stats.todayCount ?? '—';
+        if (el('statCompletedCount')) el('statCompletedCount').textContent = stats.completedCount ?? '—';
+        if (el('statAvgPrep'))       el('statAvgPrep').textContent       = stats.avgPrepMinutes != null ? `${stats.avgPrepMinutes} dk` : '—';
+      } catch (e) { /* ignore */ }
+    }
+
+    async function setHazirlaniyor(orderId) {
+      try {
+        await updateOrderStatus(orderId, 'hazirlaniyor');
+        await renderKitchen();
+      } catch (e) { alert(e.message || 'Hata'); }
+    }
+
+    async function setHazir(orderId) {
+      try {
+        await updateOrderStatus(orderId, 'hazir');
+        await renderKitchen();
+      } catch (e) { alert(e.message || 'Hata'); }
+    }
+
+    async function renderKitchen() {
+      const grid = document.getElementById('kitchenGrid');
+      try {
+        const orders = (await getOrders()).filter(order => order.status !== 'teslim');
+        grid.innerHTML = orders.length ? orders.map(order => `
+          <div class="bg-white rounded-2xl shadow-md p-5">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-xl font-bold">Sipariş #${escapeHtml(getOrderDisplayNo(order))}</h3>
+              <span class="px-3 py-1 rounded-full text-sm font-semibold ${statusBadge(order.status)}">${escapeHtml(statusLabel(order.status))}</span>
+            </div>
+            <div class="space-y-2 mb-4">
+              <p class="text-sm text-gray-500">Masa: ${escapeHtml(order.tableNo)}</p>
+              <p class="text-sm text-gray-500">Saat: ${escapeHtml(order.createdAt)}</p>
+              ${(Number.isFinite(Number(order.estimatedServiceMinutes)) && Number(order.estimatedServiceMinutes) > 0) ? `<p class="text-sm text-gray-500">Tahmini: ~${Number(order.estimatedServiceMinutes)} dk · Kalan: <span class="font-semibold tabular-nums">${formatMsAsMinutesSeconds(getOrderRemainingMs(order) ?? 0)}</span></p>` : ''}
+              ${order.note ? `<p class="text-sm text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2"><span class="font-semibold">Not:</span> ${escapeHtml(order.note)}</p>` : ''}
+            </div>
+            <div class="space-y-2 mb-5">
+              ${order.items.map(item => `<div class="bg-gray-50 rounded-xl p-3 flex justify-between"><span>${escapeHtml(item.quantity)} x ${escapeHtml(item.name)}</span><span>${escapeHtml(item.price * item.quantity)}₺</span></div>`).join('')}
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <button type="button" onclick="setHazirlaniyor(${order.id})" class="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white py-3.5 min-h-[48px] rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-blue-300 ${order.status === 'hazir' ? 'opacity-50 cursor-not-allowed' : ''}" ${order.status === 'hazir' ? 'disabled' : ''}>Hazırlanıyor</button>
+              <button type="button" onclick="setHazir(${order.id})" class="bg-green-600 hover:bg-green-700 active:bg-green-800 text-white py-3.5 min-h-[48px] rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-green-300 ${order.status === 'alindi' ? 'ring-2 ring-amber-300' : ''}">Hazır</button>
+            </div>
+          </div>`).join('')
+          : '<div class="bg-white rounded-2xl shadow-md p-6 text-gray-500">Gösterilecek aktif sipariş yok.</div>';
+      } catch (e) {
+        grid.innerHTML = '<div class="bg-white rounded-2xl shadow-md p-6 text-red-500">Siparişler yüklenemedi.</div>';
+      }
+    }
+
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) renderKitchen(); });
+    setInterval(renderKitchen, 30_000);
+
+    joinRoom('kitchen');
+    const socket = getSocket();
+    socket.on('order:new',          () => { renderKitchen(); loadKitchenStats(); });
+    socket.on('order:statusUpdate', () => { renderKitchen(); loadKitchenStats(); });
+
+    setInterval(loadKitchenStats, 30_000);
+    loadKitchenStats();
+    renderKitchen();
+  </script>
+</body>
+</html>

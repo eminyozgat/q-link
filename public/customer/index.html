@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Q-Link - Müşteri</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 min-h-screen">
+  <header class="bg-green-600 text-white shadow-md sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 py-3 sm:py-4 flex items-center justify-between gap-3 flex-wrap">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="min-w-0">
+          <h1 class="text-xl sm:text-2xl md:text-3xl font-bold truncate">Q-Link</h1>
+          <p class="text-green-100 text-xs sm:text-sm">Müşteri · Menü ve sipariş</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 ml-auto">
+        <button type="button" onclick="callWaiter()" id="btnCallWaiterDesktop" class="bg-white hover:bg-green-50 active:bg-green-100 text-green-700 px-3 sm:px-4 py-2 min-h-[40px] rounded-xl text-sm font-semibold whitespace-nowrap shadow-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-green-600">Garson Çağır</button>
+        <div class="bg-green-500 px-3 sm:px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap" title="QR ile bu masa için açıldı">
+          Masa <span id="tableNoLabel">—</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section class="max-w-7xl mx-auto px-4 py-6">
+    <div class="bg-white rounded-2xl shadow-md p-6">
+      <h2 class="text-2xl md:text-3xl font-bold">Menü</h2>
+      <p class="text-gray-500 mt-2">Ürün seç, sepete ekle, sipariş ver ve sadece durumunu takip et.</p>
+    </div>
+  </section>
+
+  <main class="max-w-7xl mx-auto px-4 pb-28 lg:pb-10 grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <section class="lg:col-span-2 order-1 lg:order-1">
+      <div id="categoryButtons" class="flex flex-wrap gap-2 sm:gap-3 mb-5 sticky top-[4.5rem] z-30 bg-gray-100/95 backdrop-blur py-2 -mx-1 px-1"></div>
+      <div id="productGrid" class="grid sm:grid-cols-2 gap-4 sm:gap-5"></div>
+    </section>
+
+    <aside class="space-y-6 order-2 lg:order-2">
+      <div class="bg-white rounded-2xl shadow-md p-4 sm:p-5">
+        <h3 class="text-xl font-bold mb-4">Sepetim</h3>
+        <div id="cartItems" class="space-y-3 min-h-[3rem]"><p class="text-gray-500 text-sm">Sepetiniz boş.</p></div>
+        <div class="mt-5 border-t pt-4 flex justify-between items-center text-lg font-bold">
+          <span>Toplam</span>
+          <span id="totalPrice" class="text-green-600 tabular-nums">0₺</span>
+        </div>
+        <button type="button" onclick="submitOrder()" id="btnSubmitDesktop" class="hidden lg:block mt-5 w-full bg-green-600 hover:bg-green-700 active:bg-green-800 text-white py-3.5 min-h-[48px] rounded-xl font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2">Siparişi Ver</button>
+        <p id="orderMessage" class="mt-4 text-sm font-medium min-h-[1.25rem]"></p>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-md p-5">
+        <div class="flex items-center justify-between mb-4 gap-2">
+          <h3 class="text-xl font-bold">Sipariş Takibi</h3>
+          <span id="statusText" class="text-sm font-semibold text-gray-500 text-right">Henüz verilmedi</span>
+        </div>
+        <p id="etaText" class="text-sm text-gray-500 mb-4" hidden></p>
+        <div class="space-y-4" role="list" aria-label="Sipariş aşamaları">
+          <div class="flex items-center gap-3"><div id="step1" class="w-4 h-4 shrink-0 rounded-full bg-gray-300 ring-2 ring-offset-2 ring-transparent" aria-hidden="true"></div><p class="font-medium">Sipariş alındı</p></div>
+          <div class="flex items-center gap-3"><div id="step2" class="w-4 h-4 shrink-0 rounded-full bg-gray-300 ring-2 ring-offset-2 ring-transparent" aria-hidden="true"></div><p class="font-medium">Hazırlanıyor</p></div>
+          <div class="flex items-center gap-3"><div id="step3" class="w-4 h-4 shrink-0 rounded-full bg-gray-300 ring-2 ring-offset-2 ring-transparent" aria-hidden="true"></div><p class="font-medium">Servise hazır</p></div>
+          <div class="flex items-center gap-3"><div id="step4" class="w-4 h-4 shrink-0 rounded-full bg-gray-300 ring-2 ring-offset-2 ring-transparent" aria-hidden="true"></div><p class="font-medium">Teslim edildi</p></div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-md p-5">
+        <h3 class="text-xl font-bold mb-4">En Çok Satılan Ürünler</h3>
+        <div id="popularProductsCustomer" class="space-y-3"></div>
+      </div>
+    </aside>
+  </main>
+
+  <div id="mobileCartBar" class="lg:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/95 backdrop-blur shadow-[0_-4px_20px_rgba(0,0,0,0.08)] px-4 py-3 safe-area-pb" hidden>
+    <div class="max-w-7xl mx-auto space-y-3">
+      <div class="flex items-center gap-3">
+        <div class="flex-1 min-w-0">
+          <p class="text-xs text-gray-500">Toplam</p>
+          <p id="mobileTotalPrice" class="text-lg font-bold text-green-600 tabular-nums">0₺</p>
+        </div>
+        <button type="button" onclick="submitOrder()" id="btnSubmitMobile" class="flex-1 max-w-[220px] bg-green-600 hover:bg-green-700 active:bg-green-800 text-white py-3.5 min-h-[48px] rounded-xl font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2">Siparişi Ver</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="orderConfirmModal" onclick="onOrderModalBackdrop(event)" class="fixed inset-0 z-[60] hidden items-end sm:items-center justify-center bg-black/45 p-0 sm:p-4" aria-hidden="true">
+    <div class="w-full sm:max-w-lg bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[85vh] overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 flex items-start justify-between gap-3">
+        <div>
+          <p class="text-xs uppercase tracking-wide text-green-700 font-semibold">Sipariş Onayı</p>
+          <h3 class="text-xl font-bold text-gray-900">Siparişi tamamla</h3>
+        </div>
+        <button type="button" onclick="closeOrderConfirm(false)" class="min-w-[40px] min-h-[40px] rounded-xl border border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50">✕</button>
+      </div>
+      <div class="px-5 py-4 space-y-4 overflow-y-auto max-h-[52vh]">
+        <div class="rounded-2xl border border-green-100 bg-green-50 px-4 py-3 text-sm">
+          <span class="text-gray-600">Masa</span>
+          <span id="confirmTableNo" class="ml-2 font-bold text-green-700"></span>
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-gray-700 mb-2">Sipariş Özeti</p>
+          <div id="confirmItems" class="space-y-2 text-sm text-gray-700"></div>
+        </div>
+        <div>
+          <label for="confirmOrderNote" class="text-sm font-semibold text-gray-700 mb-2 block">Mutfak Notu (opsiyonel)</label>
+          <textarea id="confirmOrderNote" rows="3" maxlength="200" placeholder="Örn: Soğansız olsun, acısız olsun..." class="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"></textarea>
+        </div>
+      </div>
+      <div class="px-5 py-4 border-t border-gray-100 bg-gray-50">
+        <div class="flex items-center justify-between text-base font-bold mb-3">
+          <span>Toplam</span>
+          <span id="confirmTotalPrice" class="text-green-700"></span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <button type="button" onclick="closeOrderConfirm(false)" class="w-full bg-white hover:bg-gray-100 text-gray-800 border border-gray-200 py-3 rounded-xl font-semibold">Vazgeç</button>
+          <button type="button" onclick="closeOrderConfirm(true)" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-semibold">Siparişi Onayla</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/app.js"></script>
+
+  <script>
+    function parseTableNo() {
+      const pathMatch = window.location.pathname.match(/\/masa\/(\d+)/);
+      if (pathMatch) {
+        const n = parseInt(pathMatch[1], 10);
+        if (Number.isFinite(n) && n >= 1 && n <= 999) return n;
+      }
+      const q = new URLSearchParams(window.location.search).get('masa');
+      const n = q != null && q !== '' ? parseInt(q, 10) : NaN;
+      if (Number.isFinite(n) && n >= 1 && n <= 999) return n;
+      return 12;
+    }
+    const TABLE_NO = parseTableNo();
+    const cart = [];
+    let activeCategory = 'all';
+    let pendingOrderConfirm = null;
+    let allProducts = [];
+    let allCategoryNames = [];
+    let currentOrder = null;
+    let waiterCallTs = null;
+
+    function renderCategoryButtons() {
+      const wrap = document.getElementById('categoryButtons');
+      const all = ['all', ...allCategoryNames];
+      wrap.innerHTML = all.map(cat => `
+        <button type="button" onclick="setCategory(${jsStringArg(cat)})" class="${activeCategory === cat ? 'bg-green-600 text-white' : 'bg-white'} shadow-md px-4 py-2.5 min-h-[44px] rounded-full text-sm font-medium hover:bg-gray-50 ${activeCategory === cat ? 'hover:bg-green-700' : ''} focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+          ${cat === 'all' ? 'Tümü' : escapeHtml(formatCategoryLabel(cat))}
+        </button>`).join('');
+    }
+
+    function setCategory(category) {
+      activeCategory = category;
+      renderCategoryButtons();
+      renderProducts();
+    }
+
+    function renderProducts() {
+      const grid = document.getElementById('productGrid');
+      const products = allProducts.filter(item => activeCategory === 'all' || item.category === activeCategory);
+      grid.innerHTML = products.length ? products.map(item => `
+        <div class="bg-white rounded-2xl shadow-md overflow-hidden">
+          <img src="${escapeAttr(item.image)}" alt="${escapeAttr(item.name)}" class="w-full h-52 object-cover">
+          <div class="p-5">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <h4 class="text-lg font-bold">${escapeHtml(item.name)}</h4>
+                <p class="text-sm text-gray-500 mt-1">${escapeHtml(item.desc)}</p>
+              </div>
+              <span class="text-green-600 font-bold text-lg">${escapeHtml(item.price)}₺</span>
+            </div>
+            <button type="button" onclick="addToCart(${item.id})" class="mt-4 w-full bg-green-600 hover:bg-green-700 active:bg-green-800 text-white py-3 min-h-[48px] rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2">Sepete Ekle</button>
+          </div>
+        </div>`).join('') : '<div class="bg-white rounded-2xl shadow-md p-6 text-gray-500">Bu kategoride ürün yok.</div>';
+    }
+
+    function addToCart(id) {
+      const product = allProducts.find(x => x.id === id);
+      if (!product) return;
+      const existing = cart.find(x => x.id === id);
+      if (existing) existing.quantity += 1;
+      else cart.push({ ...product, quantity: 1 });
+      renderCart();
+    }
+
+    function changeQty(id, delta) {
+      const item = cart.find(x => x.id === id);
+      if (!item) return;
+      item.quantity += delta;
+      if (item.quantity <= 0) {
+        const idx = cart.findIndex(x => x.id === id);
+        cart.splice(idx, 1);
+      }
+      renderCart();
+    }
+
+    function renderCart() {
+      const cartItems = document.getElementById('cartItems');
+      const totalPrice = document.getElementById('totalPrice');
+      if (!cart.length) {
+        cartItems.innerHTML = '<p class="text-gray-500 text-sm">Sepetiniz boş.</p>';
+        totalPrice.textContent = '0₺';
+        const mobileBar = document.getElementById('mobileCartBar');
+        const mobileTotal = document.getElementById('mobileTotalPrice');
+        if (mobileBar && mobileTotal) {
+          mobileTotal.textContent = '0₺';
+          mobileBar.hidden = true;
+        }
+        return;
+      }
+      let total = 0;
+      cartItems.innerHTML = cart.map(item => {
+        total += item.price * item.quantity;
+        return `
+        <div class="border-b pb-3">
+          <div class="flex justify-between items-start gap-3">
+            <div>
+              <p class="font-medium">${escapeHtml(item.name)}</p>
+              <p class="text-sm text-gray-500">${escapeHtml(item.price)}₺</p>
+            </div>
+            <p class="font-semibold">${escapeHtml(item.price * item.quantity)}₺</p>
+          </div>
+          <div class="mt-2 flex items-center gap-2">
+            <button type="button" onclick="changeQty(${item.id},-1)" class="min-w-[44px] min-h-[44px] rounded-lg bg-gray-200 hover:bg-gray-300 active:bg-gray-400 text-lg font-semibold leading-none focus:outline-none focus:ring-2 focus:ring-green-500" aria-label="Azalt">−</button>
+            <span class="font-medium min-w-[2ch] text-center">${item.quantity}</span>
+            <button type="button" onclick="changeQty(${item.id},1)" class="min-w-[44px] min-h-[44px] rounded-lg bg-gray-200 hover:bg-gray-300 active:bg-gray-400 text-lg font-semibold leading-none focus:outline-none focus:ring-2 focus:ring-green-500" aria-label="Artır">+</button>
+          </div>
+        </div>`;
+      }).join('');
+      totalPrice.textContent = total + '₺';
+      const mobileBar = document.getElementById('mobileCartBar');
+      const mobileTotal = document.getElementById('mobileTotalPrice');
+      if (mobileBar && mobileTotal) {
+        mobileTotal.textContent = total + '₺';
+        mobileBar.hidden = !cart.length;
+      }
+    }
+
+    async function submitOrder() {
+      const msg = document.getElementById('orderMessage');
+      if (!cart.length) {
+        msg.textContent = 'Lütfen önce sepete ürün ekleyin.';
+        msg.className = 'mt-4 text-sm font-medium text-red-600';
+        return;
+      }
+
+      const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      openOrderConfirm({
+        tableNo: TABLE_NO,
+        items: cart.map(item => ({ ...item })),
+        total,
+        onConfirm: async () => {
+          const noteInput = document.getElementById('confirmOrderNote');
+          const note = noteInput ? String(noteInput.value || '').trim() : '';
+          try {
+            const createdOrder = await createOrder({
+              tableNo: TABLE_NO,
+              items: cart.map(item => ({ id: item.id, name: item.name, price: item.price, quantity: item.quantity })),
+              note
+            });
+            cart.length = 0;
+            renderCart();
+            msg.textContent = `Siparişiniz oluşturuldu. Sipariş no: #${getOrderDisplayNo(createdOrder)}`;
+            msg.className = 'mt-4 text-sm font-medium text-green-600';
+            await refreshOrder();
+            renderPopularProductsForCustomer();
+          } catch (e) {
+            msg.textContent = e.message || 'Sipariş oluşturulamadı.';
+            msg.className = 'mt-4 text-sm font-medium text-red-600';
+          }
+        }
+      });
+    }
+
+    function openOrderConfirm({ tableNo, items, total, onConfirm }) {
+      const modal = document.getElementById('orderConfirmModal');
+      const tableEl = document.getElementById('confirmTableNo');
+      const itemsEl = document.getElementById('confirmItems');
+      const totalEl = document.getElementById('confirmTotalPrice');
+      const noteEl = document.getElementById('confirmOrderNote');
+      if (!modal || !tableEl || !itemsEl || !totalEl || !noteEl) return;
+
+      tableEl.textContent = String(tableNo);
+      itemsEl.innerHTML = items.map(item => `
+        <div class="flex items-center justify-between rounded-xl bg-white border border-gray-100 px-3 py-2">
+          <span>${escapeHtml(item.quantity)}x ${escapeHtml(item.name)}</span>
+          <span class="font-semibold tabular-nums">${escapeHtml(item.price * item.quantity)}₺</span>
+        </div>
+      `).join('');
+      totalEl.textContent = `${total}₺`;
+      noteEl.value = '';
+
+      pendingOrderConfirm = typeof onConfirm === 'function' ? onConfirm : null;
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('overflow-hidden');
+    }
+
+    function closeOrderConfirm(confirmed) {
+      const modal = document.getElementById('orderConfirmModal');
+      if (!modal) return;
+      modal.classList.remove('flex');
+      modal.classList.add('hidden');
+      modal.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('overflow-hidden');
+
+      const action = pendingOrderConfirm;
+      pendingOrderConfirm = null;
+      if (confirmed && action) action();
+    }
+
+    function onOrderModalBackdrop(event) {
+      if (event.target && event.target.id === 'orderConfirmModal') {
+        closeOrderConfirm(false);
+      }
+    }
+
+    async function callWaiter() {
+      const now = Date.now();
+      if (waiterCallTs != null && now - waiterCallTs < 60_000) return;
+      try {
+        await recordWaiterCall(TABLE_NO);
+        waiterCallTs = now;
+        const msg = document.getElementById('orderMessage');
+        if (msg) {
+          msg.textContent = 'Garson çağrıldı.';
+          msg.className = 'mt-4 text-sm font-medium text-green-600';
+        }
+      } catch (e) {
+        // Server-side cooldown active or network error
+      }
+      syncWaiterCallButton();
+    }
+
+    function syncWaiterCallButton() {
+      const buttons = [document.getElementById('btnCallWaiterDesktop')].filter(Boolean);
+      if (!buttons.length) return;
+      const cooldownMs = 60_000;
+      const now = Date.now();
+      const remaining = waiterCallTs == null ? 0 : Math.max(0, cooldownMs - (now - waiterCallTs));
+      const disabled = remaining > 0;
+      buttons.forEach(btn => {
+        btn.disabled = disabled;
+        btn.classList.toggle('opacity-50', disabled);
+        btn.classList.toggle('cursor-not-allowed', disabled);
+        btn.textContent = disabled ? `Garson Çağır (${Math.ceil(remaining / 1000)} sn)` : 'Garson Çağır';
+      });
+    }
+
+    function syncTracking() {
+      let order = currentOrder;
+      if (order?.status === 'teslim' && order?.paymentReceived) order = null;
+
+      const stepNo = { alindi: 1, hazirlaniyor: 2, hazir: 3, teslim: 4 }[order?.status] || 0;
+      const steps = [
+        document.getElementById('step1'),
+        document.getElementById('step2'),
+        document.getElementById('step3'),
+        document.getElementById('step4')
+      ];
+      const baseDone = 'w-4 h-4 shrink-0 rounded-full bg-green-500 ring-2 ring-green-600/30 ring-offset-2';
+      const baseTodo = 'w-4 h-4 shrink-0 rounded-full bg-gray-300 ring-2 ring-transparent ring-offset-2';
+      const current  = 'w-4 h-4 shrink-0 rounded-full bg-white border-[3px] border-green-600 ring-2 ring-green-200 ring-offset-2';
+      steps.forEach((step, idx) => {
+        const n = idx + 1;
+        if (stepNo >= 4 && n <= 4) step.className = baseDone;
+        else if (n < stepNo) step.className = baseDone;
+        else if (n === stepNo && stepNo > 0 && stepNo < 4) step.className = current;
+        else step.className = baseTodo;
+      });
+
+      const labels = ['Henüz verilmedi', 'Sipariş alındı', 'Hazırlanıyor', 'Servise hazır', 'Teslim edildi'];
+      const text = document.getElementById('statusText');
+      text.textContent = labels[stepNo];
+      text.className = 'text-sm font-semibold text-right ' + (stepNo ? 'text-green-600' : 'text-gray-500');
+
+      const etaEl = document.getElementById('etaText');
+      const remainingMs = order ? getOrderRemainingMs(order) : null;
+      const etaRaw = order ? Number(order.estimatedServiceMinutes) : NaN;
+      const etaMinutes = Number.isFinite(etaRaw) && etaRaw > 0 ? etaRaw : null;
+      if (!order || etaMinutes == null) {
+        etaEl.hidden = true;
+      } else {
+        if (order.status === 'alindi') {
+          etaEl.textContent = 'Siparişiniz hazırlanmaya başlayınca tahmini hazırlanma süresi yazacaktır.';
+        } else {
+          const remainingText = remainingMs != null ? formatMsAsMinutesRoundedUp(remainingMs) : '—';
+          etaEl.textContent = `Tahmini teslim süresi: ~${remainingText}`;
+        }
+        etaEl.hidden = false;
+      }
+    }
+
+    async function refreshOrder() {
+      try {
+        const order = await getLatestOrderByTable(TABLE_NO);
+        currentOrder = order;
+        syncTracking();
+      } catch (e) { /* network error, keep cached value */ }
+    }
+
+    async function renderPopularProductsForCustomer() {
+      const wrap = document.getElementById('popularProductsCustomer');
+      if (!wrap) return;
+      try {
+        const orders = await getOrders();
+        const productMap = {};
+        orders.forEach(order => {
+          (order.items || []).forEach(item => {
+            const key = item.name || 'Ürün';
+            const qty = Math.max(1, Number(item.quantity) || 1);
+            productMap[key] = (productMap[key] || 0) + qty;
+          });
+        });
+        const popular = Object.entries(productMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
+        wrap.innerHTML = popular.length
+          ? popular.map(([name, count]) => `<div class="flex justify-between border-b pb-2"><span>${escapeHtml(name)}</span><span class="font-semibold">${escapeHtml(count)} adet</span></div>`).join('')
+          : '<p class="text-gray-500 text-sm">Henüz satış verisi yok.</p>';
+      } catch (e) {
+        wrap.innerHTML = '<p class="text-gray-500 text-sm">Veri yüklenemedi.</p>';
+      }
+    }
+
+    async function init() {
+      document.getElementById('tableNoLabel').textContent = String(TABLE_NO);
+      try {
+        [allProducts, allCategoryNames] = await Promise.all([getProducts(), getCategories()]);
+      } catch (e) {
+        console.error('Menü yüklenemedi:', e);
+      }
+      renderCategoryButtons();
+      renderProducts();
+      renderCart();
+      syncWaiterCallButton();
+      await refreshOrder();
+      renderPopularProductsForCustomer();
+
+      joinRoom('table_' + TABLE_NO);
+      const socket = getSocket();
+
+      socket.on('order:statusUpdate', (order) => {
+        if (Number(order?.table_number) === TABLE_NO) refreshOrder();
+      });
+      socket.on('order:delivered', (order) => {
+        if (Number(order?.table_number) === TABLE_NO) refreshOrder();
+      });
+      socket.on('order:paymentReceived', (order) => {
+        if (Number(order?.table_number) === TABLE_NO) refreshOrder();
+      });
+    }
+
+    setInterval(syncTracking, 1000);
+    setInterval(syncWaiterCallButton, 1000);
+    setInterval(refreshOrder, 30_000);
+
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) refreshOrder();
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape') closeOrderConfirm(false);
+    });
+
+    init();
+  </script>
+  <style>
+    .safe-area-pb { padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
+  </style>
+</body>
+</html>
