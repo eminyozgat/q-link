@@ -100,10 +100,10 @@ async function updateCategory(req, res, next) {
 
 async function deleteCategory(req, res, next) {
   try {
-    const id = Number(req.params.id);
-    const existing = await menuModel.getCategoryById(id);
+    const name = (req.params.name || '').trim();
+    const existing = await menuModel.getCategoryByName(name);
     if (!existing) return res.status(404).json({ error: 'Kategori bulunamadı' });
-    await menuModel.deleteCategoryById(id);
+    await menuModel.deleteCategoryById(existing.id);
     res.json({ success: true });
   } catch (e) { next(e); }
 }

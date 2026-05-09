@@ -374,7 +374,7 @@
       const tableNo = Number(numberInput.value);
       if (!tableNo) return alert('Lütfen geçerli bir masa numarası gir.');
       try {
-        await api.post('/api/tables', { tableNumber: tableNo });
+        await api.post('/api/admin/tables', { tableNumber: tableNo });
         numberInput.value = '';
         await refreshAll();
       } catch (e) {
@@ -384,7 +384,7 @@
 
     async function removeTable(tableId) {
       try {
-        await api.del('/api/tables/' + tableId);
+        await api.del('/api/admin/tables/' + tableId);
         await refreshAll();
       } catch (e) {
         alert(e.message || 'Masa silinemedi.');
@@ -393,7 +393,7 @@
 
     async function changeTableStatus(tableId, newStatus) {
       try {
-        await api.patch('/api/tables/' + tableId + '/status', { status: newStatus });
+        await api.patch('/api/admin/tables/' + tableId + '/status', { status: newStatus });
         await refreshAll();
       } catch (e) {
         alert(e.message || 'Durum değiştirilemedi.');
@@ -470,8 +470,10 @@
     }
 
     async function removeCategory(id) {
+      const cat = _categories.find(c => c.id === id);
+      if (!cat) return;
       try {
-        await api.del('/api/admin/categories/' + id);
+        await api.del('/api/admin/categories/' + encodeURIComponent(cat.name));
         await loadCategories();
         renderCategories();
         renderProductCategoryOptions();
@@ -713,7 +715,7 @@
     async function resetSystemData() {
       if (!confirm('Tüm siparişler temizlensin ve masa durumları boş olarak sıfırlansın mı? Menü, kategori ve garsonlar korunacak.')) return;
       try {
-        await api.post('/api/tables/reset', {});
+        await api.post('/api/admin/tables/reset', {});
         await refreshAll();
       } catch (e) {
         alert(e.message || 'Sıfırlama başarısız.');
