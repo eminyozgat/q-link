@@ -109,14 +109,23 @@
             </select>
           </div>
           <button onclick="addTable()" class="bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-xl font-semibold">Masa Ekle</button>
+          <div class="mt-6 rounded-2xl border border-green-100 bg-green-50 p-4">
+            <label for="qrBaseUrlInput" class="block text-sm font-bold text-gray-800">Telefon QR adresi</label>
+            <p class="mt-1 text-sm text-gray-600">Telefon ve bilgisayar aynı Wi-Fi'da olmalı. QR kodlar bu adrese göre üretilir.</p>
+            <div class="mt-3 flex flex-col sm:flex-row gap-2">
+              <input id="qrBaseUrlInput" type="text" placeholder="Örn: http://192.168.1.34:3000" class="flex-1 px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
+              <button type="button" onclick="saveQrBaseUrlFromInput()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-xl font-semibold">Kaydet</button>
+            </div>
+            <p id="qrBaseUrlHint" class="mt-2 text-xs text-gray-600"></p>
+          </div>
           <div class="mt-6">
-            <h4 class="font-bold text-lg mb-3">Mevcut Masaları Düzenle</h4>
+            <h4 class="font-bold text-lg mb-3">Mevcut Masalar ve QR Kodları</h4>
             <div id="tableManagementList" class="space-y-3"></div>
           </div>
         </section>
         <aside class="bg-white rounded-2xl shadow-md p-5">
           <h3 class="text-xl font-bold mb-4">Açıklama</h3>
-          <p class="text-sm text-gray-500 leading-6">Bu sekmede masa ekleme, silme ve durum değiştirme işlemleri yapılır. Üstteki genel bakış bölümü sadece izleme amaçlı kalır.</p>
+          <p class="text-sm text-gray-500 leading-6">Bu sekmede masa ekleme, silme ve durum değiştirme işlemleri yapılır. Her masanın QR kodu kendi müşteri linkini açar. Örneğin Masa 5 QR okutulduğunda müşteri ekranı Masa 5 olarak açılır ve sipariş otomatik bu masaya yazılır.</p>
         </aside>
       </div>
     </section>
@@ -139,6 +148,8 @@
             <input id="productPrice" type="number" placeholder="Fiyat" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
             <select id="productCategory" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"></select>
             <input id="productEtaMinutes" type="number" min="1" max="240" placeholder="Tahmini servis süresi (dk) (örn: 15)" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
+            <input id="productCalories" type="number" min="1" placeholder="Kalori (kcal) (örn: 720)" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
+            <input id="productAllergens" type="text" placeholder="Alerjenler (örn: gluten, süt ürünü)" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
             <input id="productDesc" type="text" placeholder="Açıklama" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
             <input id="productImage" type="text" placeholder="Görsel URL" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
             <button onclick="addProduct()" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-semibold">Ürün Ekle</button>
@@ -311,11 +322,19 @@
     }
 
     function renderTableManagementList() {
+      syncQrBaseUrlInput();
       const tables = getTables().sort((a,b)=>a.number-b.number);
       document.getElementById('tableManagementList').innerHTML = tables.length ? tables.map(table => `
-        <div class="border rounded-2xl p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <div><p class="font-bold">Masa ${table.number}</p><p class="text-sm text-gray-500">${tableStatusText(table.status)}</p></div>
-          <div class="flex flex-col sm:flex-row gap-2">
+        <div class="border rounded-2xl p-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div class="flex items-center gap-4 min-w-0">
+            <img src="${escapeAttr(getQrImageUrlForTable(table.number, 150))}" alt="Masa ${escapeAttr(table.number)} QR kodu" class="w-28 h-28 rounded-xl border border-gray-200 bg-white p-2 shrink-0">
+            <div class="min-w-0">
+              <p class="font-bold">Masa ${escapeHtml(table.number)}</p>
+              <p class="text-sm text-gray-500">${tableStatusText(table.status)}</p>
+              <p class="mt-2 text-xs text-gray-500 break-all">${escapeHtml(getCustomerUrlForTable(table.number))}</p>
+            </div>
+          </div>
+          <div class="flex flex-col sm:flex-row lg:flex-col xl:flex-row gap-2">
             <select onchange="changeTableStatus(${table.number}, this.value)" class="px-4 py-2 rounded-xl border border-gray-300">
               <option value="bos" ${table.status === 'bos' ? 'selected' : ''}>Boş</option>
               <option value="bekliyor" ${table.status === 'bekliyor' ? 'selected' : ''}>Sipariş Bekliyor</option>
@@ -323,9 +342,79 @@
               <option value="hazir" ${table.status === 'hazir' ? 'selected' : ''}>Servise Hazır</option>
               <option value="teslim" ${table.status === 'teslim' ? 'selected' : ''}>Servis Edildi</option>
             </select>
+            <button onclick="openTableCustomerPage(${table.number})" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl font-semibold">Aç</button>
+            <button onclick="copyTableLink(${table.number})" class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-xl font-semibold">Linki Kopyala</button>
             <button onclick="removeTable(${table.number})" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl font-semibold">Sil</button>
           </div>
         </div>`).join('') : '<p class="text-gray-500">Masa yok.</p>';
+    }
+
+    function openTableCustomerPage(tableNo) {
+      window.open(getCustomerUrlForTable(tableNo), '_blank', 'noopener');
+    }
+
+    async function copyTableLink(tableNo) {
+      const url = getCustomerUrlForTable(tableNo);
+      try {
+        await navigator.clipboard.writeText(url);
+        alert(`Masa ${tableNo} linki kopyalandı.`);
+      } catch {
+        prompt('Masa linki:', url);
+      }
+    }
+
+    function syncQrBaseUrlInput() {
+      const input = document.getElementById('qrBaseUrlInput');
+      const hint = document.getElementById('qrBaseUrlHint');
+      if (!input || !hint) return;
+      const current = getQrBaseUrl();
+      if (document.activeElement !== input) {
+        input.value = current;
+      }
+      const host = current ? new URL(current).hostname : '';
+      const isPhoneBlockedHost = host === 'localhost' || host === '127.0.0.1' || host === '';
+      hint.textContent = isPhoneBlockedHost
+        ? 'Uyarı: localhost telefonda açılmaz. Bilgisayar IP adresi otomatik bulunamazsa buraya http://BILGISAYAR-IP:3000 yazın.'
+        : `QR kodlar şu adresle üretilecek: ${current}`;
+      hint.className = 'mt-2 text-xs ' + (isPhoneBlockedHost ? 'text-red-600 font-semibold' : 'text-gray-600');
+    }
+
+    function saveQrBaseUrlFromInput() {
+      const input = document.getElementById('qrBaseUrlInput');
+      const value = saveQrBaseUrl(input?.value || '');
+      if (!value) {
+        alert('Geçerli bir adres girin. Örn: http://192.168.1.34:3000');
+        syncQrBaseUrlInput();
+        return;
+      }
+      renderTableManagementList();
+    }
+
+    async function autoConfigureQrBaseUrl() {
+      const current = getQrBaseUrl();
+      const currentHost = current ? new URL(current).hostname : '';
+      const needsLanAddress =
+        currentHost === 'localhost' ||
+        currentHost === '127.0.0.1' ||
+        currentHost === '192.168.56.1' ||
+        currentHost.startsWith('169.254.') ||
+        currentHost === '';
+      if (!needsLanAddress) {
+        syncQrBaseUrlInput();
+        return;
+      }
+      try {
+        const response = await fetch('/api/network-info', { cache: 'no-store' });
+        if (!response.ok) throw new Error('network info failed');
+        const info = await response.json();
+        if (info && info.baseUrl) {
+          saveQrBaseUrl(info.baseUrl);
+        }
+      } catch {
+        // Statik dosya olarak açıldıysa veya API yoksa kullanıcı elle girebilir.
+      }
+      syncQrBaseUrlInput();
+      renderTableManagementList();
     }
 
     function addTable() {
@@ -543,6 +632,12 @@
               <div class="mt-2 flex flex-wrap gap-2">
                 <span class="px-3 py-1 rounded-full text-xs bg-gray-100 text-gray-700">${escapeHtml(formatCategoryLabel(item.category))}</span>
                 <span class="px-3 py-1 rounded-full text-xs bg-green-100 text-green-700">${escapeHtml(item.price)}₺</span>
+                ${(Number.isFinite(Number(item.calories)) && Number(item.calories) > 0)
+                  ? `<span class="px-3 py-1 rounded-full text-xs bg-orange-100 text-orange-700">${Number(item.calories)} kcal</span>`
+                  : ''}
+                ${(item.allergens || []).length
+                  ? `<span class="px-3 py-1 rounded-full text-xs bg-red-100 text-red-700">Alerjen: ${escapeHtml((item.allergens || []).join(', '))}</span>`
+                  : '<span class="px-3 py-1 rounded-full text-xs bg-green-50 text-green-700">Alerjen yok</span>'}
                 ${(Number.isFinite(Number(item.dynamicEstimatedServiceMinutes)) && Number(item.dynamicEstimatedServiceMinutes) > 0)
                   ? `<span class="px-3 py-1 rounded-full text-xs bg-purple-100 text-purple-700">Ort: ~${Number(item.dynamicEstimatedServiceMinutes)} dk</span>`
                   : ((Number.isFinite(Number(item.estimatedServiceMinutes)) && Number(item.estimatedServiceMinutes) > 0)
@@ -564,6 +659,8 @@
                 ${getCategories().map(cat => `<option value="${escapeAttr(cat)}" ${cat === item.category ? 'selected' : ''}>${escapeHtml(formatCategoryLabel(cat))}</option>`).join('')}
               </select>
               <input id="editEta_${item.id}" type="number" min="1" max="240" value="${(Number.isFinite(Number(item.estimatedServiceMinutes)) && Number(item.estimatedServiceMinutes) > 0) ? Number(item.estimatedServiceMinutes) : ''}" placeholder="Tahmini servis süresi (dk)" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
+              <input id="editCalories_${item.id}" type="number" min="1" value="${(Number.isFinite(Number(item.calories)) && Number(item.calories) > 0) ? Number(item.calories) : ''}" placeholder="Kalori (kcal)" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
+              <input id="editAllergens_${item.id}" type="text" value="${escapeAttr((item.allergens || []).join(', '))}" placeholder="Alerjenler (örn: gluten, süt ürünü)" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
               <input id="editDesc_${item.id}" type="text" value="${escapeAttr(item.desc || '')}" placeholder="Açıklama" class="sm:col-span-2 w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
               <input id="editImage_${item.id}" type="text" value="${escapeAttr(item.image || '')}" placeholder="Görsel URL" class="sm:col-span-2 w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
             </div>
@@ -593,6 +690,9 @@
       const category = document.getElementById(`editCategory_${id}`)?.value || '';
       const etaMinutesRaw = document.getElementById(`editEta_${id}`)?.value;
       const etaMinutes = etaMinutesRaw == null || etaMinutesRaw === '' ? null : Number(etaMinutesRaw);
+      const caloriesRaw = document.getElementById(`editCalories_${id}`)?.value;
+      const calories = caloriesRaw == null || caloriesRaw === '' ? null : Number(caloriesRaw);
+      const allergens = normalizeAllergens(document.getElementById(`editAllergens_${id}`)?.value || '');
       const desc = document.getElementById(`editDesc_${id}`)?.value?.trim() || '';
       const image = document.getElementById(`editImage_${id}`)?.value?.trim() || '';
 
@@ -601,6 +701,9 @@
       }
       if (etaMinutes != null && (!Number.isFinite(etaMinutes) || etaMinutes <= 0)) {
         return alert('Tahmini servis süresi boş bırakılabilir veya 1+ olmalı.');
+      }
+      if (calories != null && (!Number.isFinite(calories) || calories <= 0)) {
+        return alert('Kalori boş bırakılabilir veya 1+ olmalı.');
       }
 
       const products = getProducts();
@@ -616,6 +719,8 @@
         // Manuel süre güncellendiğinde eski dinamik değeri temizle.
         // Ürün tekrar 100+ örnekle hesaplandığında otomatik değer yeniden üretilecektir.
         dynamicEstimatedServiceMinutes: null,
+        calories: calories == null ? null : Math.round(calories),
+        allergens,
         desc,
         image
       };
@@ -652,10 +757,14 @@
       const price = Number(document.getElementById('productPrice').value);
       const category = document.getElementById('productCategory').value;
       const etaMinutes = Number(document.getElementById('productEtaMinutes').value);
+      const caloriesRaw = document.getElementById('productCalories').value;
+      const calories = caloriesRaw === '' ? null : Number(caloriesRaw);
+      const allergens = normalizeAllergens(document.getElementById('productAllergens').value);
       const desc = document.getElementById('productDesc').value.trim();
       const image = document.getElementById('productImage').value.trim();
       if (!name || !price || !category) return alert('Ürün adı, fiyat ve kategori zorunlu.');
       if (!Number.isFinite(etaMinutes) || etaMinutes <= 0) return alert('Tahmini servis süresi (dk) zorunlu ve 1+ olmalı.');
+      if (calories != null && (!Number.isFinite(calories) || calories <= 0)) return alert('Kalori boş bırakılabilir veya 1+ olmalı.');
       const menu = getProducts();
       menu.push({
         id: Date.now(),
@@ -663,11 +772,13 @@
         price,
         category,
         estimatedServiceMinutes: Math.round(etaMinutes),
+        calories: calories == null ? null : Math.round(calories),
+        allergens,
         desc: desc || 'Açıklama yok.',
         image: image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=900&q=80'
       });
       saveProducts(menu);
-      ['productName','productPrice','productEtaMinutes','productDesc','productImage'].forEach(id => document.getElementById(id).value = '');
+      ['productName','productPrice','productEtaMinutes','productCalories','productAllergens','productDesc','productImage'].forEach(id => document.getElementById(id).value = '');
       renderMenuList();
     }
 
@@ -688,6 +799,7 @@
       window.addEventListener('storage', renderManagement);
       document.addEventListener('visibilitychange', () => { if (!document.hidden) renderManagement(); });
       setInterval(renderManagement, 4000);
+      autoConfigureQrBaseUrl();
       renderManagement();
     }
 

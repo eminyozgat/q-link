@@ -5,7 +5,8 @@ const STORAGE_KEYS = {
   products: 'qlink_products',
   waiterCalls: 'qlink_waiter_calls',
   waiters: 'qlink_waiters',
-  panelPasswords: 'qlink_panel_passwords'
+  panelPasswords: 'qlink_panel_passwords',
+  qrBaseUrl: 'qlink_qr_base_url'
 };
 
 let siparisler = [];
@@ -29,7 +30,7 @@ function goster() {
   });
 }
 
-const DEFAULT_CATEGORIES = ['burger', 'pizza', 'icecek', 'tatli', 'yan'];
+const DEFAULT_CATEGORIES = ['burger', 'pizza', 'icecek', 'tatli', 'yan', 'salata', 'makarna', 'ana yemek', 'kahvalti'];
 const DEFAULT_PRODUCTS = [
   {
     id: 1,
@@ -84,6 +85,132 @@ const DEFAULT_PRODUCTS = [
     image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=900&q=80',
     desc: 'Taze limon ve nane.',
     estimatedServiceMinutes: 4
+  },
+  {
+    id: 7,
+    name: 'Tavuk Burger',
+    price: 205,
+    category: 'burger',
+    image: 'https://images.unsplash.com/photo-1606755962773-d324e0a13086?auto=format&fit=crop&w=900&q=80',
+    desc: 'Izgara tavuk, marul, domates ve balli hardal sos.',
+    estimatedServiceMinutes: 14
+  },
+  {
+    id: 8,
+    name: 'Double Burger',
+    price: 310,
+    category: 'burger',
+    image: 'https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?auto=format&fit=crop&w=900&q=80',
+    desc: 'Cift kofteli, cheddar peynirli doyurucu burger.',
+    estimatedServiceMinutes: 18
+  },
+  {
+    id: 9,
+    name: 'Margherita Pizza',
+    price: 245,
+    category: 'pizza',
+    image: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?auto=format&fit=crop&w=900&q=80',
+    desc: 'Domates sos, mozzarella ve taze feslegen.',
+    estimatedServiceMinutes: 18
+  },
+  {
+    id: 10,
+    name: 'Tavuklu Pizza',
+    price: 295,
+    category: 'pizza',
+    image: 'https://images.unsplash.com/photo-1601924582975-7d95c9aeb5d9?auto=format&fit=crop&w=900&q=80',
+    desc: 'Tavuk parcalari, misir, biber ve mozzarella.',
+    estimatedServiceMinutes: 21
+  },
+  {
+    id: 11,
+    name: 'Tavuklu Sezar Salata',
+    price: 185,
+    category: 'salata',
+    image: 'https://images.unsplash.com/photo-1550304943-4f24f54ddde9?auto=format&fit=crop&w=900&q=80',
+    desc: 'Izgara tavuk, kruton, parmesan ve sezar sos.',
+    estimatedServiceMinutes: 10
+  },
+  {
+    id: 12,
+    name: 'Akdeniz Salata',
+    price: 155,
+    category: 'salata',
+    image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=900&q=80',
+    desc: 'Yesillik, beyaz peynir, zeytin ve zeytinyagli sos.',
+    estimatedServiceMinutes: 8
+  },
+  {
+    id: 13,
+    name: 'Penne Alfredo',
+    price: 235,
+    category: 'makarna',
+    image: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=900&q=80',
+    desc: 'Kremali sos, mantar, tavuk ve parmesan.',
+    estimatedServiceMinutes: 16
+  },
+  {
+    id: 14,
+    name: 'Spaghetti Bolonez',
+    price: 225,
+    category: 'makarna',
+    image: 'https://images.unsplash.com/photo-1622973536968-3ead9e780960?auto=format&fit=crop&w=900&q=80',
+    desc: 'Dana kiymali domates sos ve parmesan.',
+    estimatedServiceMinutes: 17
+  },
+  {
+    id: 15,
+    name: 'Izgara Tavuk',
+    price: 260,
+    category: 'ana yemek',
+    image: 'https://images.unsplash.com/photo-1532550907401-a500c9a57435?auto=format&fit=crop&w=900&q=80',
+    desc: 'Izgara tavuk, pilav, salata ve patates.',
+    estimatedServiceMinutes: 22
+  },
+  {
+    id: 16,
+    name: 'Kofte Tabagi',
+    price: 285,
+    category: 'ana yemek',
+    image: 'https://images.unsplash.com/photo-1529042410759-befb1204b468?auto=format&fit=crop&w=900&q=80',
+    desc: 'Izgara kofte, piyaz, patates ve lavas.',
+    estimatedServiceMinutes: 24
+  },
+  {
+    id: 17,
+    name: 'Ayran',
+    price: 35,
+    category: 'icecek',
+    image: 'https://images.unsplash.com/photo-1625944525801-6c63f837d8fd?auto=format&fit=crop&w=900&q=80',
+    desc: 'Soguk ve kopuklu klasik ayran.',
+    estimatedServiceMinutes: 2
+  },
+  {
+    id: 18,
+    name: 'Soguk Kahve',
+    price: 85,
+    category: 'icecek',
+    image: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=900&q=80',
+    desc: 'Buzlu espresso, sut ve hafif vanilya.',
+    estimatedServiceMinutes: 5
+  },
+  {
+    id: 19,
+    name: 'Brownie',
+    price: 125,
+    category: 'tatli',
+    image: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=900&q=80',
+    desc: 'Sicak cikolatali brownie ve dondurma.',
+    estimatedServiceMinutes: 8
+  },
+  {
+    id: 20,
+    name: 'Serpme Kahvalti',
+    price: 340,
+    category: 'kahvalti',
+    image: 'https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?auto=format&fit=crop&w=900&q=80',
+    desc: 'Peynir, zeytin, yumurta, recel, bal ve sicak ekmek.',
+    estimatedServiceMinutes: 15
   }
 ];
 const DEFAULT_TABLES = [
@@ -141,6 +268,61 @@ function jsStringArg(value) {
   return escapeAttr(JSON.stringify(String(value ?? '')));
 }
 
+function normalizeAllergens(value) {
+  if (Array.isArray(value)) {
+    return value.map(item => String(item || '').trim()).filter(Boolean);
+  }
+  return String(value || '')
+    .split(',')
+    .map(item => item.trim())
+    .filter(Boolean);
+}
+
+function inferProductNutrition(product) {
+  const name = String(product?.name || '').toLocaleLowerCase('tr');
+  const category = String(product?.category || '').toLocaleLowerCase('tr');
+
+  if (name.includes('cheeseburger')) return { calories: 720, allergens: ['gluten', 'süt ürünü', 'susam'] };
+  if (name.includes('karışık pizza') || name.includes('karÄ±ÅŸÄ±k pizza')) return { calories: 860, allergens: ['gluten', 'süt ürünü'] };
+  if (name.includes('kola')) return { calories: 140, allergens: [] };
+  if (name.includes('cheesecake')) return { calories: 430, allergens: ['gluten', 'süt ürünü', 'yumurta'] };
+  if (name.includes('patates')) return { calories: 360, allergens: [] };
+  if (name.includes('limonata')) return { calories: 120, allergens: [] };
+  if (name.includes('tavuk burger')) return { calories: 640, allergens: ['gluten', 'yumurta', 'hardal'] };
+  if (name.includes('double burger')) return { calories: 980, allergens: ['gluten', 'süt ürünü', 'susam'] };
+  if (name.includes('margherita')) return { calories: 720, allergens: ['gluten', 'süt ürünü'] };
+  if (name.includes('tavuklu pizza')) return { calories: 790, allergens: ['gluten', 'süt ürünü'] };
+  if (name.includes('sezar')) return { calories: 520, allergens: ['gluten', 'süt ürünü', 'yumurta'] };
+  if (name.includes('akdeniz salata')) return { calories: 310, allergens: ['süt ürünü'] };
+  if (name.includes('alfredo')) return { calories: 760, allergens: ['gluten', 'süt ürünü'] };
+  if (name.includes('bolonez')) return { calories: 690, allergens: ['gluten', 'süt ürünü'] };
+  if (name.includes('izgara tavuk')) return { calories: 620, allergens: [] };
+  if (name.includes('kofte') || name.includes('köfte')) return { calories: 740, allergens: ['gluten'] };
+  if (name.includes('ayran')) return { calories: 95, allergens: ['süt ürünü'] };
+  if (name.includes('soguk kahve') || name.includes('soğuk kahve')) return { calories: 180, allergens: ['süt ürünü'] };
+  if (name.includes('brownie')) return { calories: 510, allergens: ['gluten', 'süt ürünü', 'yumurta'] };
+  if (name.includes('kahvalti') || name.includes('kahvaltı')) return { calories: 980, allergens: ['gluten', 'süt ürünü', 'yumurta'] };
+
+  if (category.includes('icecek')) return { calories: 120, allergens: [] };
+  if (category.includes('tatli')) return { calories: 420, allergens: ['gluten', 'süt ürünü'] };
+  if (category.includes('salata')) return { calories: 350, allergens: [] };
+  if (category.includes('burger')) return { calories: 700, allergens: ['gluten'] };
+  if (category.includes('pizza') || category.includes('makarna')) return { calories: 720, allergens: ['gluten', 'süt ürünü'] };
+  return { calories: null, allergens: [] };
+}
+
+function normalizeProduct(product) {
+  const inferred = inferProductNutrition(product);
+  const caloriesRaw = Number(product?.calories);
+  const calories = Number.isFinite(caloriesRaw) && caloriesRaw > 0 ? Math.round(caloriesRaw) : inferred.calories;
+  const allergens = normalizeAllergens(
+    product && Object.prototype.hasOwnProperty.call(product, 'allergens')
+      ? product.allergens
+      : inferred.allergens
+  );
+  return { ...product, calories, allergens };
+}
+
 function getOrders() { return readStorage(STORAGE_KEYS.orders, []); }
 function saveOrders(v) { writeStorage(STORAGE_KEYS.orders, v); }
 function getTables() {
@@ -151,8 +333,33 @@ function getTables() {
 function saveTables(v) { writeStorage(STORAGE_KEYS.tables, v); }
 function getCategories() { return readStorage(STORAGE_KEYS.categories, DEFAULT_CATEGORIES); }
 function saveCategories(v) { writeStorage(STORAGE_KEYS.categories, v); }
-function getProducts() { return readStorage(STORAGE_KEYS.products, DEFAULT_PRODUCTS); }
-function saveProducts(v) { writeStorage(STORAGE_KEYS.products, v); }
+function getProducts() { return readStorage(STORAGE_KEYS.products, DEFAULT_PRODUCTS).map(normalizeProduct); }
+function saveProducts(v) { writeStorage(STORAGE_KEYS.products, (v || []).map(normalizeProduct)); }
+
+function ensureDefaultMenuCatalog() {
+  const categories = getCategories();
+  const missingCategories = DEFAULT_CATEGORIES.filter(defaultCategory =>
+    !categories.some(category =>
+      String(category).localeCompare(defaultCategory, 'tr', { sensitivity: 'base' }) === 0
+    )
+  );
+  if (missingCategories.length) {
+    saveCategories([...categories, ...missingCategories]);
+  }
+
+  const products = getProducts();
+  const existingIds = new Set(products.map(product => Number(product?.id)).filter(Number.isFinite));
+  const existingNames = new Set(products.map(product => String(product?.name || '').toLocaleLowerCase('tr')));
+  const missingProducts = DEFAULT_PRODUCTS.filter(defaultProduct =>
+    !existingIds.has(Number(defaultProduct.id)) &&
+    !existingNames.has(String(defaultProduct.name).toLocaleLowerCase('tr'))
+  );
+  if (missingProducts.length) {
+    saveProducts([...products, ...structuredClone(missingProducts)]);
+  }
+}
+
+ensureDefaultMenuCatalog();
 
 function getWaiterCalls() { return readStorage(STORAGE_KEYS.waiterCalls, {}); }
 function saveWaiterCalls(v) { writeStorage(STORAGE_KEYS.waiterCalls, v); }
@@ -339,7 +546,69 @@ function getOrderDisplayNo(order) {
   return Number(order?.id);
 }
 
+function getCurrentPageBaseUrl() {
+  if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+    return window.location.origin;
+  }
+  return '';
+}
+
+function normalizeQrBaseUrl(value) {
+  const raw = String(value || '').trim().replace(/\/+$/, '');
+  if (!raw) return '';
+  try {
+    const parsed = new URL(raw);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return '';
+    return parsed.origin;
+  } catch {
+    return '';
+  }
+}
+
+function getQrBaseUrl() {
+  const saved = normalizeQrBaseUrl(localStorage.getItem(STORAGE_KEYS.qrBaseUrl));
+  return saved || getCurrentPageBaseUrl();
+}
+
+function saveQrBaseUrl(value) {
+  const normalized = normalizeQrBaseUrl(value);
+  if (normalized) localStorage.setItem(STORAGE_KEYS.qrBaseUrl, normalized);
+  else localStorage.removeItem(STORAGE_KEYS.qrBaseUrl);
+  return normalized;
+}
+
+function getCustomerUrlForTable(tableNo) {
+  const n = Number(tableNo);
+  const base = getQrBaseUrl();
+  const baseUrl = base
+    ? new URL('musteri.html', `${base}/`)
+    : new URL('musteri.html', window.location.href);
+  if (Number.isFinite(n) && n >= 1 && n <= 999) {
+    baseUrl.searchParams.set('masa', String(Math.trunc(n)));
+  }
+  return baseUrl.href;
+}
+
+function getQrImageUrlForTable(tableNo, size = 180) {
+  const safeSize = Math.min(500, Math.max(120, Number(size) || 180));
+  const url = getCustomerUrlForTable(tableNo);
+  return `https://api.qrserver.com/v1/create-qr-code/?size=${safeSize}x${safeSize}&data=${encodeURIComponent(url)}`;
+}
+
+function ensureTableExists(tableNo) {
+  const n = Number(tableNo);
+  if (!Number.isFinite(n) || n < 1 || n > 999) return false;
+  const tableNumber = Math.trunc(n);
+  const tables = getTables();
+  if (!tables.some(t => Number(t.number) === tableNumber)) {
+    tables.push({ number: tableNumber, status: 'bos' });
+    saveTables(tables);
+  }
+  return true;
+}
+
 function createOrder({ tableNo, items, note }) {
+  ensureTableExists(tableNo);
   const orders = getOrders();
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const nowTs = Date.now();

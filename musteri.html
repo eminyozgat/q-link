@@ -119,6 +119,33 @@
     </div>
   </div>
 
+  <div id="chatbotPanel" class="fixed right-4 bottom-24 lg:bottom-5 z-[65] hidden w-[calc(100vw-2rem)] max-w-sm overflow-hidden rounded-3xl bg-white shadow-2xl border border-gray-200">
+    <div class="bg-green-600 text-white px-5 py-4 flex items-center justify-between gap-3">
+      <div>
+        <p class="text-xs font-semibold text-green-100">Q-Link Asistan</p>
+        <h3 class="text-lg font-bold">Yemek onerisi</h3>
+      </div>
+      <button type="button" onclick="toggleChatbot(false)" class="min-w-[40px] min-h-[40px] rounded-xl bg-white/15 hover:bg-white/25 font-bold focus:outline-none focus:ring-2 focus:ring-white/60">x</button>
+    </div>
+    <div id="chatbotMessages" class="h-80 overflow-y-auto bg-gray-50 px-4 py-4 space-y-3"></div>
+    <div class="px-4 py-3 border-t border-gray-100 bg-white">
+      <div class="flex flex-wrap gap-2 mb-3">
+        <button type="button" onclick="askChatbotQuick('burger oner')" class="px-3 py-2 rounded-full bg-green-50 text-green-700 text-xs font-semibold">Burger</button>
+        <button type="button" onclick="askChatbotQuick('tatli oner')" class="px-3 py-2 rounded-full bg-green-50 text-green-700 text-xs font-semibold">Tatli</button>
+        <button type="button" onclick="askChatbotQuick('icecek oner')" class="px-3 py-2 rounded-full bg-green-50 text-green-700 text-xs font-semibold">Icecek</button>
+        <button type="button" onclick="askChatbotQuick('en cok satilan')" class="px-3 py-2 rounded-full bg-green-50 text-green-700 text-xs font-semibold">Populer</button>
+      </div>
+      <form onsubmit="submitChatbotMessage(event)" class="flex gap-2">
+        <input id="chatbotInput" type="text" maxlength="120" placeholder="Ne yemek istersiniz?" class="flex-1 min-w-0 rounded-xl border border-gray-300 px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-xl text-sm font-bold">Gonder</button>
+      </form>
+    </div>
+  </div>
+
+  <button id="chatbotToggle" type="button" onclick="toggleChatbot()" class="fixed right-4 bottom-24 lg:bottom-5 z-[64] bg-green-600 hover:bg-green-700 text-white rounded-full shadow-xl px-5 py-4 font-bold focus:outline-none focus:ring-2 focus:ring-green-300">
+    Asistan
+  </button>
+
   <script src="app.js"></script>
   
   <script>
@@ -126,9 +153,14 @@
       const q = new URLSearchParams(window.location.search).get('masa');
       const n = q != null && q !== '' ? parseInt(q, 10) : NaN;
       if (Number.isFinite(n) && n >= 1 && n <= 999) return n;
-      return 12;
+      const firstTable = getTables()
+        .map(table => Number(table.number))
+        .filter(number => Number.isFinite(number) && number >= 1 && number <= 999)
+        .sort((a, b) => a - b)[0];
+      return firstTable || 1;
     }
     const TABLE_NO = parseTableNo();
+    ensureTableExists(TABLE_NO);
     const cart = [];
     let activeCategory = 'all';
     let pendingOrderConfirm = null;
@@ -162,6 +194,14 @@
                 <p class="text-sm text-gray-500 mt-1">${escapeHtml(item.desc)}</p>
               </div>
               <span class="text-green-600 font-bold text-lg">${escapeHtml(item.price)}₺</span>
+            </div>
+            <div class="mt-4 flex flex-wrap gap-2">
+              ${(Number.isFinite(Number(item.calories)) && Number(item.calories) > 0)
+                ? `<span class="px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-semibold">${Number(item.calories)} kcal</span>`
+                : ''}
+              ${(item.allergens || []).length
+                ? `<span class="px-3 py-1 rounded-full bg-red-50 text-red-700 text-xs font-semibold">Alerjen: ${escapeHtml((item.allergens || []).join(', '))}</span>`
+                : '<span class="px-3 py-1 rounded-full bg-green-50 text-green-700 text-xs font-semibold">Alerjen yok</span>'}
             </div>
             <button type="button" onclick="addToCart(${item.id})" class="mt-4 w-full bg-green-600 hover:bg-green-700 active:bg-green-800 text-white py-3 min-h-[48px] rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2">Sepete Ekle</button>
           </div>
@@ -392,6 +432,273 @@
       wrap.innerHTML = popular.length
         ? popular.map(([name, count]) => `<div class="flex justify-between border-b pb-2"><span>${escapeHtml(name)}</span><span class="font-semibold">${escapeHtml(count)} adet</span></div>`).join('')
         : '<p class="text-gray-500 text-sm">Henüz satış verisi yok.</p>';
+    }
+
+    let chatbotStarted = false;
+    const chatbotState = {
+      lastQuery: '',
+      mood: '',
+      budget: '',
+      wantsDrink: false,
+      lastRecommendations: []
+    };
+
+    function toggleChatbot(forceOpen = null) {
+      const panel = document.getElementById('chatbotPanel');
+      const toggle = document.getElementById('chatbotToggle');
+      const input = document.getElementById('chatbotInput');
+      if (!panel || !toggle) return;
+      const shouldOpen = forceOpen == null ? panel.classList.contains('hidden') : Boolean(forceOpen);
+      panel.classList.toggle('hidden', !shouldOpen);
+      toggle.classList.toggle('hidden', shouldOpen);
+      if (shouldOpen) {
+        startChatbot();
+        setTimeout(() => input?.focus(), 50);
+      }
+    }
+
+    function startChatbot() {
+      if (chatbotStarted) return;
+      chatbotStarted = true;
+      addChatbotMessage('bot', 'Merhaba, ben Q-Link Asistan. Bugun nasil bir sey istersiniz: doyurucu, hafif, tatli, icecekli ya da uygun fiyatli?');
+    }
+
+    function addChatbotMessage(sender, content, { html = false } = {}) {
+      const wrap = document.getElementById('chatbotMessages');
+      if (!wrap) return;
+      const isUser = sender === 'user';
+      const row = document.createElement('div');
+      row.className = `flex ${isUser ? 'justify-end' : 'justify-start'}`;
+      const bubble = document.createElement('div');
+      bubble.className = `${isUser ? 'bg-green-600 text-white' : 'bg-white text-gray-800 border border-gray-200'} max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-6 shadow-sm`;
+      if (html) bubble.innerHTML = content;
+      else bubble.textContent = content;
+      row.appendChild(bubble);
+      wrap.appendChild(row);
+      wrap.scrollTop = wrap.scrollHeight;
+    }
+
+    function submitChatbotMessage(event) {
+      event.preventDefault();
+      const input = document.getElementById('chatbotInput');
+      const text = String(input?.value || '').trim();
+      if (!text) return;
+      input.value = '';
+      addChatbotMessage('user', text);
+      handleChatbotConversation(text);
+    }
+
+    function askChatbotQuick(text) {
+      const input = document.getElementById('chatbotInput');
+      if (input) input.value = text;
+      submitChatbotMessage(new Event('submit'));
+    }
+
+    function updateChatbotState(query) {
+      const q = normalizeChatText(query);
+      chatbotState.lastQuery = query;
+      if (q.includes('doyurucu') || q.includes('aciktim') || q.includes('ana yemek')) chatbotState.mood = 'doyurucu';
+      if (q.includes('hafif')) chatbotState.mood = 'hafif';
+      if (q.includes('tatli') || q.includes('tatlı')) chatbotState.mood = 'tatli';
+      if (q.includes('burger')) chatbotState.mood = 'burger';
+      if (q.includes('pizza')) chatbotState.mood = 'pizza';
+      if (q.includes('eksi') || q.includes('ekşi') || q.includes('ferah')) chatbotState.mood = 'eksi';
+      if (q.includes('aci') || q.includes('acı')) chatbotState.mood = 'aci';
+      if (q.includes('kremali') || q.includes('kremalı')) chatbotState.mood = 'kremali';
+      if (q.includes('peynir')) chatbotState.mood = 'peynirli';
+      if (q.includes('tavuk')) chatbotState.mood = 'tavuk';
+      if (q.includes('etli') || q.includes('et severim') || q.includes('kofte') || q.includes('köfte')) chatbotState.mood = 'etli';
+      if (q.includes('icecek') || q.includes('kola') || q.includes('limonata')) {
+        chatbotState.mood = 'icecek';
+        chatbotState.wantsDrink = true;
+      }
+      if (q.includes('ucuz') || q.includes('uygun')) chatbotState.budget = 'uygun';
+      if (q.includes('farketmez') || q.includes('fark etmez') || q.includes('sen sec')) chatbotState.mood = 'surprise';
+    }
+
+    function isGreeting(query) {
+      const q = normalizeChatText(query);
+      return ['merhaba', 'selam', 'hello', 'hi'].some(word => q.includes(word));
+    }
+
+    function isThanks(query) {
+      const q = normalizeChatText(query);
+      return q.includes('tesekkur') || q.includes('sagol') || q.includes('sağol') || q.includes('tamam');
+    }
+
+    function isAskingForAnother(query) {
+      const q = normalizeChatText(query);
+      return q.includes('baska') || q.includes('başka') || q.includes('alternatif') || q.includes('diger');
+    }
+
+    function chatbotNeedsClarification(query) {
+      const q = normalizeChatText(query);
+      const hasFoodSignal = ['burger', 'pizza', 'tatli', 'tatlı', 'icecek', 'kola', 'limonata', 'patates', 'hafif', 'doyurucu', 'ucuz', 'uygun', 'populer', 'oner', 'öner', 'aciktim', 'ana yemek', 'farketmez', 'sen sec', 'eksi', 'ekşi', 'ferah', 'aci', 'acı', 'kremali', 'kremalı', 'peynir', 'tavuk', 'etli', 'kofte', 'köfte'].some(word => q.includes(word));
+      return !hasFoodSignal && q.split(/\s+/).filter(Boolean).length <= 2;
+    }
+
+    function getConversationalLead(query, recommendations) {
+      const q = normalizeChatText(query);
+      const first = recommendations[0];
+      if (!first) return 'Menude su an uygun bir onerim yok gibi gorunuyor.';
+      if (isAskingForAnother(query)) return 'Tabii, baska bir alternatif dusunelim.';
+      if (q.includes('populer') || q.includes('cok satilan')) return 'En cok tercih edilenlerden baslayalim.';
+      if (chatbotState.budget === 'uygun') return 'Uygun fiyatli tarafta en mantikli secenekler bunlar.';
+      if (chatbotState.mood === 'doyurucu') return `${first.name} iyi bir doyurucu secim olur. Yanina bir icecek de yakisir.`;
+      if (chatbotState.mood === 'hafif') return 'Daha hafif bir tercih icin bunlar iyi gider.';
+      if (chatbotState.mood === 'tatli') return 'Tatli tarafinda sunlari one cikaririm.';
+      if (chatbotState.mood === 'icecek') return 'Icecek icin su secenekleri onerebilirim.';
+      if (chatbotState.mood === 'eksi') return 'Eksi ve ferah tat seviyorsan bu secenekler daha uygun.';
+      if (chatbotState.mood === 'aci') return 'Aci seven biri icin daha karakterli seceneklere bakalim.';
+      if (chatbotState.mood === 'kremali') return 'Kremali ve yumusak tatlara uygun secenekler bunlar.';
+      if (chatbotState.mood === 'peynirli') return 'Peynirli tatlari seviyorsan bunlar iyi gider.';
+      if (chatbotState.mood === 'tavuk') return 'Tavuklu seceneklerden en mantiklilari bunlar.';
+      if (chatbotState.mood === 'etli') return 'Etli ve daha doyurucu tarafta bunlari oneririm.';
+      if (chatbotState.mood === 'surprise') return `Ben olsam ${first.name} ile baslardim.`;
+      return `Bence ${first.name} iyi bir secim olabilir. Istersen alternatifleri de ekledim.`;
+    }
+
+    function handleChatbotConversation(query) {
+      if (isGreeting(query)) {
+        addChatbotMessage('bot', 'Merhaba! Bugun nasil bir sey olsun: doyurucu mu, hafif mi, tatli mi?');
+        return;
+      }
+      if (isThanks(query)) {
+        addChatbotMessage('bot', 'Rica ederim. Aklina takilan olursa buradayim; istersen onerilen urunu sepete de ekleyebilirsin.');
+        return;
+      }
+      if (chatbotNeedsClarification(query)) {
+        addChatbotMessage('bot', 'Biraz daha yonlendireyim mi? Burger, pizza, tatli, icecek, uygun fiyatli veya doyurucu diye yazabilirsiniz.');
+        return;
+      }
+      updateChatbotState(query);
+      respondWithRecommendations(query);
+    }
+
+    function normalizeChatText(value) {
+      return String(value || '')
+        .toLocaleLowerCase('tr-TR')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+    }
+
+    function getProductPopularityCounts() {
+      const counts = {};
+      getOrders().forEach(order => {
+        (order.items || []).forEach(item => {
+          const id = Number(item.id);
+          if (!Number.isFinite(id)) return;
+          counts[id] = (counts[id] || 0) + Math.max(1, Number(item.quantity) || 1);
+        });
+      });
+      return counts;
+    }
+
+    function scoreProductForChat(product, query, popularityCounts) {
+      const text = normalizeChatText(`${product.name || ''} ${product.desc || ''} ${product.category || ''} ${(product.allergens || []).join(' ')}`);
+      const category = normalizeChatText(product.category || '');
+      const q = normalizeChatText(query);
+      let score = 0;
+      if (q.includes('populer') || q.includes('cok satilan') || q.includes('favori')) score += popularityCounts[Number(product.id)] || 0;
+      if (q.includes('burger') && category.includes('burger')) score += 8;
+      if (q.includes('pizza') && category.includes('pizza')) score += 8;
+      if ((q.includes('icecek') || q.includes('cola') || q.includes('kola') || q.includes('limonata')) && (category.includes('icecek') || text.includes('icecek'))) score += 8;
+      if ((q.includes('tatli') || q.includes('tatlı') || q.includes('cheesecake')) && (category.includes('tatli') || text.includes('tatli') || text.includes('cheesecake'))) score += 8;
+      if ((q.includes('yan') || q.includes('patates') || q.includes('atistirmalik')) && (category.includes('yan') || text.includes('patates'))) score += 8;
+      if ((q.includes('eksi') || q.includes('ekşi') || q.includes('ferah')) && (text.includes('limon') || text.includes('frambuaz') || text.includes('nane') || text.includes('salata') || category.includes('icecek') || category.includes('salata'))) score += 9;
+      if ((q.includes('aci') || q.includes('acı')) && (text.includes('biber') || text.includes('sucuk') || text.includes('sos') || category.includes('pizza'))) score += 6;
+      if ((q.includes('kremali') || q.includes('kremalı') || q.includes('yumusak')) && (text.includes('krema') || text.includes('kremali') || text.includes('alfredo') || text.includes('cheesecake') || text.includes('sut'))) score += 8;
+      if (q.includes('peynir') && (text.includes('cheddar') || text.includes('mozzarella') || text.includes('parmesan') || text.includes('peynir'))) score += 8;
+      if (q.includes('tavuk') && text.includes('tavuk')) score += 8;
+      if ((q.includes('etli') || q.includes('et severim') || q.includes('kofte') || q.includes('köfte')) && (text.includes('et') || text.includes('kofte') || text.includes('kiyma') || text.includes('dana'))) score += 8;
+      if ((q.includes('tatli istemiyorum') || q.includes('tatlı istemiyorum')) && category.includes('tatli')) score -= 12;
+      if (q.includes('icecek istemiyorum') && category.includes('icecek')) score -= 12;
+      if (q.includes('hafif') && (category.includes('icecek') || category.includes('tatli'))) score += 3;
+      if ((q.includes('ucuz') || q.includes('uygun')) && Number(product.price) <= 100) score += 4;
+      if ((q.includes('doyurucu') || q.includes('aciktim') || q.includes('ana yemek')) && Number(product.price) >= 150) score += 4;
+      for (const word of q.split(/\s+/).filter(w => w.length >= 3)) {
+        if (text.includes(word)) score += 2;
+      }
+      return score;
+    }
+
+    function getAvoidedAllergensFromQuery(query) {
+      const q = normalizeChatText(query);
+      const avoided = [];
+      const hasAvoidSignal = q.includes('alerji') || q.includes('alerjim') || q.includes('istemiyorum') || q.includes('yemiyorum') || q.includes('olmasin') || q.includes('olmasın') || q.includes('siz');
+      const allergenWords = [
+        ['gluten', ['gluten', 'glutensiz']],
+        ['süt ürünü', ['sut', 'süt', 'laktoz', 'laktozsuz']],
+        ['yumurta', ['yumurta']],
+        ['susam', ['susam']],
+        ['hardal', ['hardal']],
+        ['fıstık', ['fistik', 'fıstık']],
+      ];
+      for (const [allergen, words] of allergenWords) {
+        if (words.some(word => q.includes(normalizeChatText(word))) && hasAvoidSignal) {
+          avoided.push(allergen);
+        }
+      }
+      return avoided;
+    }
+
+    function productHasAvoidedAllergen(product, avoidedAllergens) {
+      const productAllergens = (product.allergens || []).map(normalizeChatText);
+      return avoidedAllergens.some(allergen => {
+        const normalized = normalizeChatText(allergen);
+        return productAllergens.some(productAllergen => productAllergen.includes(normalized) || normalized.includes(productAllergen));
+      });
+    }
+
+    function getChatbotRecommendations(query) {
+      const avoidedAllergens = getAvoidedAllergensFromQuery(query);
+      const products = getProducts().filter(product => !productHasAvoidedAllergen(product, avoidedAllergens));
+      const popularityCounts = getProductPopularityCounts();
+      const scored = products
+        .map(product => ({ product, score: scoreProductForChat(product, query, popularityCounts) }))
+        .sort((a, b) => b.score - a.score || Number(a.product.price || 0) - Number(b.product.price || 0));
+      const best = scored.filter(item => item.score > 0).slice(0, 3).map(item => item.product);
+      if (best.length) return best;
+      return products
+        .slice()
+        .sort((a, b) => (popularityCounts[Number(b.id)] || 0) - (popularityCounts[Number(a.id)] || 0))
+        .slice(0, 3);
+    }
+
+    function respondWithRecommendations(query) {
+      const recommendations = getChatbotRecommendations(query);
+      chatbotState.lastRecommendations = recommendations;
+      if (!recommendations.length) {
+        const avoided = getAvoidedAllergensFromQuery(query);
+        addChatbotMessage('bot', avoided.length
+          ? `Bu alerjenleri icermeyen uygun urun bulamadim: ${avoided.join(', ')}. Garsona danismaniz iyi olur.`
+          : 'Su an menude urun bulamadim. Yonetim panelinden menuye urun ekleyebilirsiniz.');
+        return;
+      }
+      const lead = getConversationalLead(query, recommendations);
+      const cards = recommendations.map(product => `
+        <div class="rounded-xl border border-gray-200 bg-gray-50 p-3 mb-2 last:mb-0">
+          <div class="flex justify-between gap-3">
+            <div>
+              <p class="font-bold">${escapeHtml(product.name)}</p>
+              <p class="text-xs text-gray-500 mt-1">${escapeHtml(product.desc || formatCategoryLabel(product.category))}</p>
+              <p class="text-xs text-gray-500 mt-1">${Number.isFinite(Number(product.calories)) ? `${Number(product.calories)} kcal` : 'Kalori bilgisi yok'} · ${(product.allergens || []).length ? `Alerjen: ${escapeHtml((product.allergens || []).join(', '))}` : 'Alerjen yok'}</p>
+            </div>
+            <p class="font-bold text-green-700 whitespace-nowrap">${escapeHtml(product.price)}₺</p>
+          </div>
+          <button type="button" onclick="addChatbotProductToCart(${Number(product.id)})" class="mt-3 w-full rounded-xl bg-green-600 hover:bg-green-700 text-white px-3 py-2 text-xs font-bold">Sepete ekle</button>
+        </div>
+      `).join('');
+      const followUp = chatbotState.wantsDrink
+        ? 'Istersen yiyecek tarafindan da bir eslestirme onerebilirim.'
+        : 'Yanina icecek veya tatli da istersen soyle, ona gore tamamlayayim.';
+      addChatbotMessage('bot', `${escapeHtml(lead)}<div class="mt-3">${cards}</div><p class="mt-2 text-xs text-gray-500">${escapeHtml(followUp)}</p>`, { html: true });
+    }
+
+    function addChatbotProductToCart(productId) {
+      addToCart(Number(productId));
+      const product = getProducts().find(item => Number(item.id) === Number(productId));
+      addChatbotMessage('bot', `${product ? product.name : 'Urun'} sepete eklendi. Siparisi tamamlamadan once not eklemek istersen onay ekraninda yazabilirsin.`);
     }
 
     function formatMsAsMinutesRoundedUp(ms) {
